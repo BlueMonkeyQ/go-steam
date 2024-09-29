@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+</head>
+
+<body>
+    <button hx-get="/updateSteamUserLibrary">Get Steam Library</button>
+    <ul>
+        {{range .games}}
+        <li>{{.Appid}}</li>
+        {{end}}
+    </ul>
+</body>
+
+</html>
