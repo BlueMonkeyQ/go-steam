@@ -34,16 +34,19 @@ func UpdateSteamUserLibrary(c echo.Context) error {
 	for _, game := range sul.Response.Games {
 
 		err = src.InsertSteamUserGamesDB(game)
-		if strings.Contains(err.Error(), "UNIQUE") {
-			msg := fmt.Sprintf("Appid #%d Already Exist", game.Appid)
-			fmt.Println(msg)
-			continue
-		} else if err != nil {
-			c.Logger().Error(err)
-			msg := fmt.Sprintf("Error Inserting Appid #%d into SteamUserGames table", game.Appid)
-			return c.String(http.StatusInternalServerError, msg)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE") {
+				msg := fmt.Sprintf("Appid #%d Already Exist", game.Appid)
+				fmt.Println(msg)
+				continue
+			} else {
+				msg := fmt.Sprintf("Error Inserting Appid #%d into SteamUserGames table", game.Appid)
+				fmt.Println(msg)
+				c.Logger().Error(err)
+				return c.String(http.StatusInternalServerError, msg)
+			}
+
 		}
-		break
 
 	}
 	return nil

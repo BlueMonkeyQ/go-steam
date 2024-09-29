@@ -106,6 +106,9 @@ func createConnection() (*sql.DB, error) {
 }
 
 func InsertSteamUserGamesDB(data Games) error {
+	msg := fmt.Sprintf("Inserting Appid #%d into SteamUserGames", data.Appid)
+	fmt.Println(msg)
+
 	db, err := createConnection()
 	if err != nil {
 		return err
@@ -138,8 +141,7 @@ func InsertSteamUserGamesDB(data Games) error {
 	if err != nil {
 		return err
 	}
-	msg := fmt.Sprintf("Inserting Appid #%d", data.Appid)
-	fmt.Println(msg)
+	fmt.Println("Successfull")
 	return nil
 }
 
