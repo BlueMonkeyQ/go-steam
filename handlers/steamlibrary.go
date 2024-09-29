@@ -6,41 +6,55 @@ import (
 	"go-steam/src"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo"
 )
 
-func GetSteamGameData(c echo.Context, appid int) error {
-	url := fmt.Sprintf("http://store.steampowered.com/api/appdetails?appids=%d", appid)
+func GetSteamAppDetail(c echo.Context, id int) error {
+	fmt.Println("Endpoint: GetSteamAppDetails")
+	url := fmt.Sprintf("http://store.steampowered.com/api/appdetails?appids=%d", id)
 	resp, err := http.Get(url)
 	if err != nil {
-		c.Logger().Error(err)
 		return c.String(http.StatusInternalServerError, "Error fetching AppDetails")
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		c.Logger().Error(err)
-		return c.String(http.StatusInternalServerError, "Error Reading Response Body")
+		fmt.Println("Error Reading Response Body")
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
-
-	var ap src.AppDetails
-	if err := json.Unmarshal(body, &ap); err != nil {
-		c.Logger().Error(err)
-		return c.String(http.StatusInternalServerError, "Error Unmarshaling AppDetails Json Data")
+	var appDetails src.AppDetails
+	if err := json.Unmarshal(body, &appDetails); err != nil {
+		fmt.Println("Error Unmarshaling Json Data")
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
+	fmt.Println(appDetails)
 
-	err = src.InsertSteamAppDetailsDB(ap)
-	if strings.Contains(err.Error(), "UNIQUE") {
-		msg := fmt.Sprintf("Appid #%d Already Exist", ap.Num240.Data.SteamAppid)
+	exist, err := src.ExistSteamAppDetailsDBId(id)
+	if err != nil {
+		msg := fmt.Sprintf("Error Checking if Appid #%d Exist in SteamAppDetails table", id)
 		fmt.Println(msg)
-	} else if err != nil {
 		c.Logger().Error(err)
-		msg := fmt.Sprintf("Error Inserting Appid #%d into SteamAppDetails table", ap.Num240.Data.SteamAppid)
 		return c.String(http.StatusInternalServerError, msg)
 	}
+	if exist {
+		fmt.Println("Updating AppDetails")
+		if err := src.UpdateSteamAppDetailsDB(appDetails); err != nil {
+			msg := fmt.Sprintf("Error Inserting Appid #%d into SteamAppDetails table", id)
+			fmt.Println(msg)
+			c.Logger().Error(err)
+			return c.String(http.StatusInternalServerError, msg)
+		}
+	} else {
+		fmt.Println("Getting AppDetails")
+		if err := src.InsertSteamAppDetailsDB(appDetails); err != nil {
+			msg := fmt.Sprintf("Error Inserting Appid #%d into SteamAppDetails table", id)
+			fmt.Println(msg)
+			c.Logger().Error(err)
+			return c.String(http.StatusInternalServerError, msg)
+		}
+	}
+	fmt.Println("Successfull")
 	return nil
-
 }

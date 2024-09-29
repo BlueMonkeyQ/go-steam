@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -57,7 +58,7 @@ func InitDatabase() {
 		        Type TEXT,
 				Name TEXT,
 				SteamAppid INTEGER,
-		        RequiredAge
+		        RequiredAge,
 				IsFree INTEGER,
 				DetailedDescription TEXT,
 				AboutTheGame TEXT,
@@ -66,13 +67,13 @@ func InitDatabase() {
 				HeaderImage TEXT,
 				CapsuleImage TEXT,
 				CapsuleImagev5 TEXT,
-				Developers BLOB,
-				Publishers BLOB,
+				Developers TEXT,
+				Publishers TEXT,
 				Windows INTEGER,
 				Mac INTEGER,
 				Linux INTEGER,
-				Categories BLOB,
-				Genres BLOB,
+				Categories TEXT,
+				Genres TEXT,
 				ReleaseDate TEXT,
 				Background TEXT,
 				UNIQUE(SteamAppid)
@@ -83,6 +84,26 @@ func InitDatabase() {
 			panic(err)
 		}
 	}
+}
+
+func InitSteamDatabase() error {
+	db, err := createConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query = `
+	SELECT id FROM steamappdetails
+	`
+	var id int
+	err = db.QueryRow(query).Scan(&id)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return err
+		}
+	}
+	return nil
 }
 
 // Creates a connector to the sqlite3 database
@@ -106,8 +127,7 @@ func createConnection() (*sql.DB, error) {
 }
 
 func InsertSteamUserGamesDB(data Games) error {
-	msg := fmt.Sprintf("Inserting Appid #%d into SteamUserGames", data.Appid)
-	fmt.Println(msg)
+	fmt.Println("Database: InsertSteamUserGamesDB")
 
 	db, err := createConnection()
 	if err != nil {
@@ -141,11 +161,203 @@ func InsertSteamUserGamesDB(data Games) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Successfull")
 	return nil
 }
 
+func InsertSteamAppDetailsDB(data AppDetails) error {
+	fmt.Println("Database: InsertSteamAppDetailsDB")
+	msg := fmt.Sprintf("Inserting Appid #%d", data.SteamAppid)
+	fmt.Println(msg)
+	db, err := createConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var categories []string
+	for _, i := range data.Categories {
+		categories = append(categories, i.Description)
+	}
+	var genres []string
+	for _, i := range data.Genres {
+		genres = append(genres, i.Description)
+	}
+
+	var query string = `
+	INSERT INTO steamappdetails (
+	Type,
+	Name,
+	SteamAppid,
+	RequiredAge,
+	IsFree,
+	DetailedDescription,
+	AboutTheGame,
+	ShortDescription,
+	SupportedLanguages,
+	HeaderImage,
+	CapsuleImage,
+	CapsuleImagev5,
+	Developers,
+	Publishers,
+	Windows,
+	Mac,
+	Linux,
+	Categories,
+	Genres,
+	ReleaseDate,
+	Background
+	)
+	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+	`
+	_, err = db.Exec(query,
+		data.Type,
+		data.Name,
+		data.SteamAppid,
+		data.RequiredAge,
+		data.IsFree,
+		data.DetailedDescription,
+		data.AboutTheGame,
+		data.ShortDescription,
+		data.SupportedLanguages,
+		data.HeaderImage,
+		data.CapsuleImage,
+		data.CapsuleImagev5,
+		strings.Join(data.Developers, ","),
+		strings.Join(data.Publishers, ","),
+		data.Platforms.Windows,
+		data.Platforms.Mac,
+		data.Platforms.Linux,
+		strings.Join(categories, ","),
+		strings.Join(genres,","),
+		data.ReleaseDate.Date,
+		data.Background,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateSteamAppDetailsDB(data AppDetails) error {
+	fmt.Println("Database: UpdateSteamAppDetailsDB")
+	msg := fmt.Sprintf("Inserting Appid #%d", data.SteamAppid)
+	fmt.Println(msg)
+	db, err := createConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var categories []string
+	for _, i := range data.Categories {
+		categories = append(categories, i.Description)
+	}
+	var genres []string
+	for _, i := range data.Genres {
+		genres = append(genres, i.Description)
+	}
+
+	var query string = `
+	UPDATE steamappdetails
+	Type,
+	Name,
+	SteamAppid,
+	RequiredAge,
+	IsFree,
+	DetailedDescription,
+	AboutTheGame,
+	ShortDescription,
+	SupportedLanguages,
+	HeaderImage,
+	CapsuleImage,
+	CapsuleImagev5,
+	Developers,
+	Publishers,
+	Windows,
+	Mac,
+	Linux,
+	Categories,
+	Genres,
+	ReleaseDate,
+	Background
+	)
+	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+	`
+	_, err = db.Exec(query,
+		data.Type,
+		data.Name,
+		data.SteamAppid,
+		data.RequiredAge,
+		data.IsFree,
+		data.DetailedDescription,
+		data.AboutTheGame,
+		data.ShortDescription,
+		data.SupportedLanguages,
+		data.HeaderImage,
+		data.CapsuleImage,
+		data.CapsuleImagev5,
+		strings.Join(data.Developers, ","),
+		strings.Join(data.Publishers, ","),
+		data.Platforms.Windows,
+		data.Platforms.Mac,
+		data.Platforms.Linux,
+		strings.Join(categories, ","),
+		strings.Join(genres,","),
+		data.ReleaseDate.Date,
+		data.Background,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ExistSteamAppDetailsDBId(id int) (bool, error) {
+	fmt.Println("Database: ExistSteamAppDetailsDBId")
+	db, err := createConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT id FROM steamappdetails WHERE SteamAppid = ?;
+	`
+	var exist int
+	err = db.QueryRow(query, id).Scan(&exist)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func GetSteamAppDetailsDBId(id int) (AppDetails, error) {
+	fmt.Println("Database: GetSteamAppDetailsDBId")
+	db, err := createConnection()
+	if err != nil {
+		return AppDetails{}, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT * FROM steamappdetails WHERE SteamAppid = ?;
+	`
+	var appDetails AppDetails
+	err = db.QueryRow(query, id).Scan(&appDetails)
+	if err != nil {
+		return AppDetails{}, err
+	}
+
+	return appDetails, nil
+}
+
 func GetSteamUserGamesDB() ([]Games, error) {
+	fmt.Println("Database: GetSteamUserGamesDB")
 	db, err := createConnection()
 	if err != nil {
 		return nil, err
@@ -190,68 +402,4 @@ func GetSteamUserGamesDB() ([]Games, error) {
 	}
 
 	return games, nil
-}
-
-func InsertSteamAppDetailsDB(data AppDetails) error {
-	db, err := createConnection()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	var query string = `
-	INSERT INTO steamappdetails (
-	Type,
-	Name,
-	SteamAppid,
-	RequiredAge,
-	IsFree,
-	DetailedDescription,
-	AboutTheGame,
-	ShortDescription,
-	SupportedLanguages,
-	HeaderImage,
-	CapsuleImage,
-	CapsuleImagev5,
-	Developers,
-	Publishers,
-	Windows,
-	Mac,
-	Linux,
-	Categories,
-	Genres,
-	ReleaseDate,
-	Background
-	)
-	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
-	`
-	_, err = db.Exec(query,
-		data.Num240.Data.Type,
-		data.Num240.Data.Name,
-		data.Num240.Data.SteamAppid,
-		data.Num240.Data.RequiredAge,
-		data.Num240.Data.IsFree,
-		data.Num240.Data.DetailedDescription,
-		data.Num240.Data.AboutTheGame,
-		data.Num240.Data.ShortDescription,
-		data.Num240.Data.SupportedLanguages,
-		data.Num240.Data.HeaderImage,
-		data.Num240.Data.CapsuleImage,
-		data.Num240.Data.CapsuleImagev5,
-		data.Num240.Data.Developers,
-		data.Num240.Data.Publishers,
-		data.Num240.Data.Platforms.Windows,
-		data.Num240.Data.Platforms.Mac,
-		data.Num240.Data.Platforms.Linux,
-		data.Num240.Data.Categories,
-		data.Num240.Data.Genres,
-		data.Num240.Data.ReleaseDate,
-		data.Num240.Data.Background,
-	)
-	if err != nil {
-		return err
-	}
-	msg := fmt.Sprintf("Inserting Appid #%d", data.Num240.Data.SteamAppid)
-	fmt.Println(msg)
-	return nil
 }

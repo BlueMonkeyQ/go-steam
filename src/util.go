@@ -19,40 +19,33 @@ type SteamUserLibrary struct {
 }
 
 type AppDetails struct {
-	Num240 struct {
-		Success bool `json:"success"`
-		Data    struct {
-			Type                string   `json:"type"`
-			Name                string   `json:"name"`
-			SteamAppid          int      `json:"steam_appid"`
-			RequiredAge         int      `json:"required_age"`
-			IsFree              bool     `json:"is_free"`
-			DetailedDescription string   `json:"detailed_description"`
-			AboutTheGame        string   `json:"about_the_game"`
-			ShortDescription    string   `json:"short_description"`
-			SupportedLanguages  string   `json:"supported_languages"`
-			HeaderImage         string   `json:"header_image"`
-			CapsuleImage        string   `json:"capsule_image"`
-			CapsuleImagev5      string   `json:"capsule_imagev5"`
-			Developers          []string `json:"developers"`
-			Publishers          []string `json:"publishers"`
-			Platforms           struct {
-				Windows bool `json:"windows"`
-				Mac     bool `json:"mac"`
-				Linux   bool `json:"linux"`
-			} `json:"platforms"`
-			Categories []struct {
-				ID          int    `json:"id"`
-				Description string `json:"description"`
-			} `json:"categories"`
-			Genres []struct {
-				ID          string `json:"id"`
-				Description string `json:"description"`
-			} `json:"genres"`
-			ReleaseDate struct {
-				Date string `json:"date"`
-			} `json:"release_date"`
-			Background string `json:"background"`
-		} `json:"data"`
-	} `json:"240"`
+	Type                string   `json:"type"`
+	Name                string   `json:"name"`
+	SteamAppid          int      `json:"steam_appid"`
+	RequiredAge         int      `json:"required_age"`
+	IsFree              bool     `json:"is_free,"`
+	DetailedDescription string   `json:"detailed_description"`
+	AboutTheGame        string   `json:"about_the_game"`
+	ShortDescription    string   `json:"short_description"`
+	SupportedLanguages  string   `json:"supported_languages"`
+	HeaderImage         string   `json:"header_image"`
+	CapsuleImage        string   `json:"capsule_image"`
+	CapsuleImagev5      string   `json:"capsule_imagev5"`
+	Developers          []string `json:"developers"`
+	Publishers          []string `json:"publishers"`
+	Platforms           struct {
+		Windows bool `json:"windows"`
+		Mac     bool `json:"mac"`
+		Linux   bool `json:"linux"`
+	} `json:"platforms"`
+	Categories []struct {
+		Description string `json:"description"`
+	} `json:"categories"`
+	Genres []struct {
+		Description string `json:"description"`
+	} `json:"genres"`
+	ReleaseDate struct {
+		Date string `json:"date"`
+	} `json:"release_date"`
+	Background string `json:"background"`
 }
