@@ -5,6 +5,7 @@ import (
 	"go-steam/src"
 	"html/template"
 	"io"
+	"net/http"
 
 	"github.com/labstack/echo"
 )
@@ -28,8 +29,11 @@ func main() {
 		templates: template.Must(template.ParseGlob("*.html")),
 	}
 	e.Renderer = t
-
+	e.GET("/", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "index.html", nil)
+	})
 	e.GET("/updateSteamUserLibrary", handlers.UpdateSteamUserLibrary)
-	e.GET("/", handlers.GetSteamUserLibrary)
+	e.GET("/getSteamUserLibrary", handlers.GetSteamUserLibrary)
+	e.GET("/getSteamUserLibrary/:AppID", handlers.GetSteamUserLibraryAppid)
 	e.Logger.Fatal(e.Start(":8000"))
 }

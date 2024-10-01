@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+</head>
+
+<body>
+    <h1>Steam User Library</h1>
+    <p>Welcome to the Steam User Library page.</p>
+    <div></div>
+    <ul>
+        {{range .}}
+        <li>
+            <span>{{ .Name }}</span>
+            <span>({{ .AppID }})</span>
+        </li>
+        {{end}}
+    </ul>
+    </div>
+</body>
+
+</html>

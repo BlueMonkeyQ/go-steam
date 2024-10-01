@@ -6,6 +6,7 @@ import (
 	"go-steam/src"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -60,13 +61,36 @@ func UpdateSteamUserLibrary(c echo.Context) error {
 
 func GetSteamUserLibrary(c echo.Context) error {
 	fmt.Println("Endpoint: GetSteamUserLibrary")
-	games, err := src.GetSteamUserGamesDB()
+	library, err := src.GetSteamUserLibrary()
 	if err != nil {
 		c.Logger().Error(err)
-		return c.String(http.StatusInternalServerError, "Error fetching games")
+		return c.String(http.StatusInternalServerError, "Error fetching Library")
 	}
-	fmt.Printf("Returning #%d Games\n", len(games))
-	return c.Render(http.StatusOK, "index.html", map[string]interface{}{
-		"games": games,
+	fmt.Printf("Returning #%d Games\n", len(library))
+	return c.Render(http.StatusOK, "getSteamUserLibrary.html", map[string]interface{}{
+		"library": library,
+	})
+}
+
+func GetSteamUserLibraryAppid(c echo.Context) error {
+	param := c.Param("AppID")
+	appId, err := strconv.Atoi(param)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.String(http.StatusBadRequest, "Invalid AppID")
+	}
+
+	fmt.Printf("Endpoint: GetSteamUserLibraryAppid/%d\n", appId)
+	game, err := src.GetSteamUserLibraryAppid(appId)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.String(http.StatusInternalServerError, "Error fetching Game")
+	}
+
+	fmt.Println(game)
+
+	fmt.Printf("Returning Library Game #%d\n", appId)
+	return c.Render(http.StatusOK, "getSteamUserLibraryAppid.html", map[string]interface{}{
+		"game": game,
 	})
 }

@@ -164,9 +164,9 @@ func InsertSteamUserGamesDB(data Games) error {
 	return nil
 }
 
-func InsertSteamAppDetailsDB(data AppDetails) error {
+func InsertSteamAppDetailsDB(id int, data AppDetails) error {
 	fmt.Println("Database: InsertSteamAppDetailsDB")
-	msg := fmt.Sprintf("Inserting Appid #%d", data.SteamAppid)
+	msg := fmt.Sprintf("Inserting Appid #%d", id)
 	fmt.Println(msg)
 	db, err := createConnection()
 	if err != nil {
@@ -175,11 +175,11 @@ func InsertSteamAppDetailsDB(data AppDetails) error {
 	defer db.Close()
 
 	var categories []string
-	for _, i := range data.Categories {
+	for _, i := range data.Data.Categories {
 		categories = append(categories, i.Description)
 	}
 	var genres []string
-	for _, i := range data.Genres {
+	for _, i := range data.Data.Genres {
 		genres = append(genres, i.Description)
 	}
 
@@ -210,27 +210,27 @@ func InsertSteamAppDetailsDB(data AppDetails) error {
 	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 	`
 	_, err = db.Exec(query,
-		data.Type,
-		data.Name,
-		data.SteamAppid,
-		data.RequiredAge,
-		data.IsFree,
-		data.DetailedDescription,
-		data.AboutTheGame,
-		data.ShortDescription,
-		data.SupportedLanguages,
-		data.HeaderImage,
-		data.CapsuleImage,
-		data.CapsuleImagev5,
-		strings.Join(data.Developers, ","),
-		strings.Join(data.Publishers, ","),
-		data.Platforms.Windows,
-		data.Platforms.Mac,
-		data.Platforms.Linux,
+		data.Data.Type,
+		data.Data.Name,
+		data.Data.SteamAppid,
+		data.Data.RequiredAge,
+		data.Data.IsFree,
+		data.Data.DetailedDescription,
+		data.Data.AboutTheGame,
+		data.Data.ShortDescription,
+		data.Data.SupportedLanguages,
+		data.Data.HeaderImage,
+		data.Data.CapsuleImage,
+		data.Data.CapsuleImagev5,
+		strings.Join(data.Data.Developers, ","),
+		strings.Join(data.Data.Publishers, ","),
+		data.Data.Platforms.Windows,
+		data.Data.Platforms.Mac,
+		data.Data.Platforms.Linux,
 		strings.Join(categories, ","),
-		strings.Join(genres,","),
-		data.ReleaseDate.Date,
-		data.Background,
+		strings.Join(genres, ","),
+		data.Data.ReleaseDate.Date,
+		data.Data.Background,
 	)
 	if err != nil {
 		return err
@@ -238,9 +238,9 @@ func InsertSteamAppDetailsDB(data AppDetails) error {
 	return nil
 }
 
-func UpdateSteamAppDetailsDB(data AppDetails) error {
+func UpdateSteamAppDetailsDB(id int, data AppDetails) error {
 	fmt.Println("Database: UpdateSteamAppDetailsDB")
-	msg := fmt.Sprintf("Inserting Appid #%d", data.SteamAppid)
+	msg := fmt.Sprintf("Updating Appid #%d", data.Data.SteamAppid)
 	fmt.Println(msg)
 	db, err := createConnection()
 	if err != nil {
@@ -249,62 +249,62 @@ func UpdateSteamAppDetailsDB(data AppDetails) error {
 	defer db.Close()
 
 	var categories []string
-	for _, i := range data.Categories {
+	for _, i := range data.Data.Categories {
 		categories = append(categories, i.Description)
 	}
 	var genres []string
-	for _, i := range data.Genres {
+	for _, i := range data.Data.Genres {
 		genres = append(genres, i.Description)
 	}
 
 	var query string = `
 	UPDATE steamappdetails
-	Type,
-	Name,
-	SteamAppid,
-	RequiredAge,
-	IsFree,
-	DetailedDescription,
-	AboutTheGame,
-	ShortDescription,
-	SupportedLanguages,
-	HeaderImage,
-	CapsuleImage,
-	CapsuleImagev5,
-	Developers,
-	Publishers,
-	Windows,
-	Mac,
-	Linux,
-	Categories,
-	Genres,
-	ReleaseDate,
-	Background
-	)
-	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+	SET
+		Type = ?,
+		Name = ?,
+		RequiredAge = ?,
+		IsFree = ?,
+		DetailedDescription = ?,
+		AboutTheGame = ?,
+		ShortDescription = ?,
+		SupportedLanguages = ?,
+		HeaderImage = ?,
+		CapsuleImage = ?,
+		CapsuleImagev5 = ?,
+		Developers = ?,
+		Publishers = ?,
+		Windows = ?,
+		Mac = ?,
+		Linux = ?,
+		Categories = ?,
+		Genres = ?,
+		ReleaseDate = ?,
+		Background = ?
+	WHERE
+		SteamAppid = ?
 	`
 	_, err = db.Exec(query,
-		data.Type,
-		data.Name,
-		data.SteamAppid,
-		data.RequiredAge,
-		data.IsFree,
-		data.DetailedDescription,
-		data.AboutTheGame,
-		data.ShortDescription,
-		data.SupportedLanguages,
-		data.HeaderImage,
-		data.CapsuleImage,
-		data.CapsuleImagev5,
-		strings.Join(data.Developers, ","),
-		strings.Join(data.Publishers, ","),
-		data.Platforms.Windows,
-		data.Platforms.Mac,
-		data.Platforms.Linux,
+		data.Data.Type,
+		data.Data.Name,
+		data.Data.RequiredAge,
+		data.Data.IsFree,
+		data.Data.DetailedDescription,
+		data.Data.AboutTheGame,
+		data.Data.ShortDescription,
+		data.Data.SupportedLanguages,
+		data.Data.HeaderImage,
+		data.Data.CapsuleImage,
+		data.Data.CapsuleImagev5,
+		strings.Join(data.Data.Developers, ","),
+		strings.Join(data.Data.Publishers, ","),
+		data.Data.Platforms.Windows,
+		data.Data.Platforms.Mac,
+		data.Data.Platforms.Linux,
 		strings.Join(categories, ","),
-		strings.Join(genres,","),
-		data.ReleaseDate.Date,
-		data.Background,
+		strings.Join(genres, ","),
+		data.Data.ReleaseDate.Date,
+		data.Data.Background,
+		data.Data.SteamAppid,
 	)
 	if err != nil {
 		return err
@@ -402,4 +402,140 @@ func GetSteamUserGamesDB() ([]Games, error) {
 	}
 
 	return games, nil
+}
+
+func GetSteamUserLibrary() ([]Library, error) {
+	fmt.Println("Database: GetSteamUserGamesDB")
+	db, err := createConnection()
+	if err != nil {
+		return []Library{}, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT 
+		steamusergames.app_id,
+		steamappdetails.Type,
+		steamappdetails.Name,
+		steamappdetails.RequiredAge,
+		steamappdetails.IsFree,
+		steamappdetails.DetailedDescription,
+		steamappdetails.AboutTheGame,
+		steamappdetails.ShortDescription,
+		steamappdetails.SupportedLanguages,
+		steamappdetails.HeaderImage,
+		steamappdetails.CapsuleImage,
+		steamappdetails.CapsuleImagev5,
+		steamappdetails.Developers,
+		steamappdetails.Publishers,
+		steamappdetails.Windows,
+		steamappdetails.Mac,
+		steamappdetails.Linux,
+		steamappdetails.Categories,
+		steamappdetails.Genres,
+		steamappdetails.ReleaseDate,
+		steamappdetails.Background
+	FROM 
+		steamusergames
+	JOIN 
+		steamappdetails 
+	ON 
+		steamusergames.app_id = steamappdetails.SteamAppid;
+	`
+	rows, err := db.Query(query)
+	if err != nil {
+		return []Library{}, err
+	}
+	defer rows.Close()
+
+	var library []Library
+
+	for rows.Next() {
+		var entry struct {
+			AppID               int
+			Type                string
+			Name                string
+			RequiredAge         int
+			IsFree              int
+			DetailedDescription string
+			AboutTheGame        string
+			ShortDescription    string
+			SupportedLanguages  string
+			HeaderImage         string
+			CapsuleImage        string
+			CapsuleImagev5      string
+			Developers          string
+			Publishers          string
+			Windows             int
+			Mac                 int
+			Linux               int
+			Categories          string
+			Genres              string
+			ReleaseDate         string
+			Background          string
+		}
+		err = rows.Scan(
+			&entry.AppID,
+			&entry.Type,
+			&entry.Name,
+			&entry.RequiredAge,
+			&entry.IsFree,
+			&entry.DetailedDescription,
+			&entry.AboutTheGame,
+			&entry.ShortDescription,
+			&entry.SupportedLanguages,
+			&entry.HeaderImage,
+			&entry.CapsuleImage,
+			&entry.CapsuleImagev5,
+			&entry.Developers,
+			&entry.Publishers,
+			&entry.Windows,
+			&entry.Mac,
+			&entry.Linux,
+			&entry.Categories,
+			&entry.Genres,
+			&entry.ReleaseDate,
+			&entry.Background,
+		)
+		if err != nil {
+			return []Library{}, err
+		}
+		library = append(library, entry)
+	}
+
+	return library, nil
+}
+
+func GetSteamUserLibraryAppid(id int) (Entry, error) {
+	fmt.Println("Database: GetSteamUserLibraryAppid")
+	db, err := createConnection()
+	if err != nil {
+		return Entry{}, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT 
+		steamusergames.app_id,
+		steamappdetails.Name
+	FROM 
+		steamusergames
+	JOIN 
+		steamappdetails 
+	ON 
+		steamusergames.app_id = steamappdetails.SteamAppid
+	WHERE
+		steamusergames.app_id = ?;
+	`
+
+	var entry Entry
+	err = db.QueryRow(query, id).Scan(&entry.AppID, &entry.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return Entry{}, nil
+		}
+		return Entry{}, err
+	}
+
+	return entry, nil
 }

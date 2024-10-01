@@ -10,6 +10,10 @@ import (
 	"github.com/labstack/echo"
 )
 
+// Call the appdetails endpoint
+// Because the AppID is used as the key, this key changes values
+// Get the data from the key, load into a Json string, then Un load into AppDetails Struct
+// If the appid exist in the steamAppDetails table, then update the values; Else insert new record
 func GetSteamAppDetail(c echo.Context, id int) error {
 	fmt.Println("Endpoint: GetSteamAppDetails")
 	url := fmt.Sprintf("http://store.steampowered.com/api/appdetails?appids=%d", id)
@@ -24,12 +28,28 @@ func GetSteamAppDetail(c echo.Context, id int) error {
 		fmt.Println("Error Reading Response Body")
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	var appDetails src.AppDetails
-	if err := json.Unmarshal(body, &appDetails); err != nil {
-		fmt.Println("Error Unmarshaling Json Data")
+
+	var bodyJson map[string]interface{}
+	if err := json.Unmarshal(body, &bodyJson); err != nil {
+		fmt.Println("Error Unmarshaling Json Data into interface")
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	fmt.Println(appDetails)
+	appData, ok := bodyJson[fmt.Sprintf("%d", id)].(map[string]interface{})
+	if !ok {
+		return c.String(http.StatusInternalServerError, "Error parsing app data")
+	}
+
+	jsonData, err := json.Marshal(appData)
+	if err != nil {
+		fmt.Println("Error Marshling appData into Json")
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	var appDetails src.AppDetails
+	if err := json.Unmarshal(jsonData, &appDetails); err != nil {
+		fmt.Println("Error Unmarshaling Json Data into interface")
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
 
 	exist, err := src.ExistSteamAppDetailsDBId(id)
 	if err != nil {
@@ -40,7 +60,7 @@ func GetSteamAppDetail(c echo.Context, id int) error {
 	}
 	if exist {
 		fmt.Println("Updating AppDetails")
-		if err := src.UpdateSteamAppDetailsDB(appDetails); err != nil {
+		if err := src.UpdateSteamAppDetailsDB(id, appDetails); err != nil {
 			msg := fmt.Sprintf("Error Inserting Appid #%d into SteamAppDetails table", id)
 			fmt.Println(msg)
 			c.Logger().Error(err)
@@ -48,7 +68,7 @@ func GetSteamAppDetail(c echo.Context, id int) error {
 		}
 	} else {
 		fmt.Println("Getting AppDetails")
-		if err := src.InsertSteamAppDetailsDB(appDetails); err != nil {
+		if err := src.InsertSteamAppDetailsDB(id, appDetails); err != nil {
 			msg := fmt.Sprintf("Error Inserting Appid #%d into SteamAppDetails table", id)
 			fmt.Println(msg)
 			c.Logger().Error(err)
