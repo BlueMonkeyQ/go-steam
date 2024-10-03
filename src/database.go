@@ -83,6 +83,41 @@ func InitDatabase() {
 		if err != nil {
 			panic(err)
 		}
+
+		fmt.Println("Creating Steam Achievements Table...")
+		query = `
+			CREATE TABLE IF NOT EXISTS steamachievements (
+		        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		        Appid INTEGER,
+		        Name TEXT,
+				DisplayName TEXT,
+				Hidden INTEGER,
+				Description TEXT,
+				Icon TEXT,
+				IconGray TEXT,
+				UNIQUE(Appid, Name)
+		    );
+			`
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Creating Steam User Achievements Table...")
+		query = `
+			CREATE TABLE IF NOT EXISTS steamuserachievements (
+		        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		        Appid INTEGER,
+		        Apiname TEXT,
+		        Achieved INTEGER,
+		        Unlocktime INTEGER,
+				UNIQUE(Appid, Apiname)
+		    );
+			`
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -164,6 +199,42 @@ func InsertSteamUserGamesDB(data Games) error {
 	return nil
 }
 
+func InsertSteamAchievementsDB(appId int, data Achievements) error {
+	fmt.Println("Database: InsertSteamAchievementsDB")
+
+	db, err := createConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query string = `
+	INSERT INTO steamachievements (
+	Appid,
+	Name,
+	DisplayName,
+	Hidden,
+	Description,
+	Icon,
+	IconGray
+	)
+	VALUES (?,?,?,?,?,?,?);
+	`
+	_, err = db.Exec(query,
+		appId,
+		data.Name,
+		data.DisplayName,
+		data.Hidden,
+		data.Description,
+		data.Icon,
+		data.Icongray,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func InsertSteamAppDetailsDB(id int, data AppDetails) error {
 	fmt.Println("Database: InsertSteamAppDetailsDB")
 	msg := fmt.Sprintf("Inserting Appid #%d", id)
@@ -238,10 +309,38 @@ func InsertSteamAppDetailsDB(id int, data AppDetails) error {
 	return nil
 }
 
+func InsertSteamUserAchivementsDB(id int, data UserAchievements) error {
+	fmt.Println("Database: InsertSteamUserAchivementsDB")
+
+	db, err := createConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query string = `
+	INSERT INTO steamuserachievements (
+	Appid,
+	Apiname,
+	Achieved,
+	Unlocktime
+	)
+	VALUES (?,?,?,?);
+	`
+	_, err = db.Exec(query,
+		id,
+		data.Apiname,
+		data.Achieved,
+		data.Unlocktime,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func UpdateSteamAppDetailsDB(id int, data AppDetails) error {
 	fmt.Println("Database: UpdateSteamAppDetailsDB")
-	msg := fmt.Sprintf("Updating Appid #%d", data.Data.SteamAppid)
-	fmt.Println(msg)
 	db, err := createConnection()
 	if err != nil {
 		return err
@@ -312,6 +411,36 @@ func UpdateSteamAppDetailsDB(id int, data AppDetails) error {
 	return nil
 }
 
+func UpdateSteamUserAchivementsDB(id int, data UserAchievements) error {
+	fmt.Println("Database: UpdateSteamUserAchivementsDB")
+	db, err := createConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query string = `
+	UPDATE steamuserachievements
+	SET
+		Achieved = ?,
+		Unlocktime = ?
+	WHERE
+		Appid = ?
+	AND
+		Apiname = ?
+	`
+	_, err = db.Exec(query,
+		data.Achieved,
+		data.Unlocktime,
+		id,
+		data.Apiname,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func ExistSteamAppDetailsDBId(id int) (bool, error) {
 	fmt.Println("Database: ExistSteamAppDetailsDBId")
 	db, err := createConnection()
@@ -325,6 +454,54 @@ func ExistSteamAppDetailsDBId(id int) (bool, error) {
 	`
 	var exist int
 	err = db.QueryRow(query, id).Scan(&exist)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func ExistSteamAchievementsId(id int) (bool, error) {
+	fmt.Println("Database: ExistSteamAchievementsId")
+	db, err := createConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT Appid FROM steamuserachievements WHERE Appid = ?;
+	`
+	var exist int
+	err = db.QueryRow(query, id).Scan(&exist)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func ExistSteamUserAchivementsDB(id int, apiname string) (bool, error) {
+	fmt.Println("Database: ExistSteamUserAchivementsDB")
+	db, err := createConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT Appid FROM steamuserachievements WHERE Appid = ? AND Apiname = ?;
+	`
+	var exist int
+	err = db.QueryRow(query, id, apiname).Scan(&exist)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
@@ -514,28 +691,147 @@ func GetSteamUserLibraryAppid(id int) (Entry, error) {
 	}
 	defer db.Close()
 
+	/*
+
+	 */
+
 	var query string = `
 	SELECT 
 		steamusergames.app_id,
-		steamappdetails.Name
+		steamusergames.playtime_forever,
+		steamusergames.playtime_windows_forever,
+		steamusergames.playtime_mac_forever,
+		steamusergames.playtime_linux_forever,
+		steamusergames.playtime_deck_forever,
+		steamusergames.rtime_last_played,
+		steamusergames.playtime_2weeks,
+		steamappdetails.Type,
+		steamappdetails.Name,
+		steamappdetails.SteamAppid,
+		steamappdetails.RequiredAge,
+		steamappdetails.IsFree,
+		steamappdetails.DetailedDescription,
+		steamappdetails.AboutTheGame,
+		steamappdetails.ShortDescription,
+		steamappdetails.SupportedLanguages,
+		steamappdetails.HeaderImage,
+		steamappdetails.CapsuleImage,
+		steamappdetails.CapsuleImagev5,
+		steamappdetails.Developers,
+		steamappdetails.Publishers,
+		steamappdetails.Windows,
+		steamappdetails.Mac,
+		steamappdetails.Linux,
+		steamappdetails.Categories,
+		steamappdetails.Genres,
+		steamappdetails.ReleaseDate,
+		steamappdetails.Background
 	FROM 
 		steamusergames
 	JOIN 
-		steamappdetails 
-	ON 
-		steamusergames.app_id = steamappdetails.SteamAppid
+		steamappdetails ON steamusergames.app_id = steamappdetails.SteamAppid
 	WHERE
 		steamusergames.app_id = ?;
 	`
 
 	var entry Entry
-	err = db.QueryRow(query, id).Scan(&entry.AppID, &entry.Name)
+	err = db.QueryRow(query, id).Scan(
+		&entry.Appid,
+		&entry.PlaytimeForever,
+		&entry.PlaytimeWindowsForever,
+		&entry.PlaytimeMacForever,
+		&entry.PlaytimeLinuxForever,
+		&entry.PlaytimeDeckForever,
+		&entry.RtimeLastPlayed,
+		&entry.Playtime2Weeks,
+		&entry.Type,
+		&entry.Name,
+		&entry.SteamAppid,
+		&entry.RequiredAge,
+		&entry.IsFree,
+		&entry.DetailedDescription,
+		&entry.AboutTheGame,
+		&entry.ShortDescription,
+		&entry.SupportedLanguages,
+		&entry.HeaderImage,
+		&entry.CapsuleImage,
+		&entry.CapsuleImagev5,
+		&entry.Developers,
+		&entry.Publishers,
+		&entry.Windows,
+		&entry.Mac,
+		&entry.Linux,
+		&entry.Categories,
+		&entry.Genres,
+		&entry.ReleaseDate,
+		&entry.Background,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return Entry{}, nil
 		}
+		fmt.Println(err)
 		return Entry{}, err
 	}
 
 	return entry, nil
+}
+
+func GetSteamUserLibraryAchievements(id int) ([]AppidAchivements, error) {
+	fmt.Println("Database: GetSteamUserLibraryAchievements")
+	db, err := createConnection()
+	if err != nil {
+		return []AppidAchivements{}, err
+	}
+	defer db.Close()
+
+	var query string = `
+	SELECT 
+		steamuserachievements.Appid,
+		steamuserachievements.Apiname,
+		steamuserachievements.Achieved,
+		steamuserachievements.Unlocktime,
+		steamachievements.Name,
+		steamachievements.DisplayName,
+		steamachievements.Hidden,
+		steamachievements.Description,
+		steamachievements.Icon,
+		steamachievements.IconGray
+	FROM 
+		steamuserachievements
+	JOIN 
+		steamachievements 
+	ON 
+		steamuserachievements.Appid = steamachievements.Appid
+	AND 
+		steamuserachievements.Apiname = steamachievements.Name;
+	`
+	rows, err := db.Query(query)
+	if err != nil {
+		return []AppidAchivements{}, err
+	}
+	defer rows.Close()
+
+	var achivements []AppidAchivements
+	for rows.Next() {
+		var entry AppidAchivements
+		err = rows.Scan(
+			&entry.UserAchievements.Apiname,
+			&entry.UserAchievements.Achieved,
+			&entry.UserAchievements.Unlocktime,
+			&entry.Achievements.Name,
+			&entry.Achievements.Defaultvalue,
+			&entry.Achievements.DisplayName,
+			&entry.Achievements.Hidden,
+			&entry.Achievements.Description,
+			&entry.Achievements.Icon,
+			&entry.Achievements.Icongray,
+		)
+		if err != nil {
+			return []AppidAchivements{}, err
+		}
+		achivements = append(achivements, entry)
+	}
+
+	return achivements, nil
 }

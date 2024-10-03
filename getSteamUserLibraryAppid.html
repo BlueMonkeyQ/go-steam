@@ -7,18 +7,23 @@
 </head>
 
 <body>
-    <h1>Steam User Library</h1>
-    <p>Welcome to the Steam User Library page.</p>
-    <div></div>
+    <button hx-get="/updateSteamUserLibrary">Get Steam Library</button>
     <ul>
         {{range .}}
-        <li>
+        <div>
+            <li>
+                <span>{{ .Appid }}</span>
+                <span>({{ .Name }})</span>
+            </li>
+        </div>
+        <button hx-get="/updateSteamUserLibraryAchievements/{{.Appid}}">Update Steam Achievements</button>
+        <div hx-get="/getSteamUserLibraryAchievements/{{.Appid}}">
+            {{ range . achivements}}
             <span>{{ .Name }}</span>
-            <span>({{ .AppID }})</span>
-        </li>
+            {{end}}
+        </div>
         {{end}}
     </ul>
-    </div>
 </body>
 
 </html>

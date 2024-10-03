@@ -77,6 +77,78 @@ type Library struct {
 }
 
 type Entry struct {
-	AppID int
-	Name  string
+	Appid                  int
+	PlaytimeForever        int
+	PlaytimeWindowsForever int
+	PlaytimeMacForever     int
+	PlaytimeLinuxForever   int
+	PlaytimeDeckForever    int
+	RtimeLastPlayed        int
+	Playtime2Weeks         int
+	Type                   string
+	Name                   string
+	SteamAppid             int
+	RequiredAge            int
+	IsFree                 int
+	DetailedDescription    string
+	AboutTheGame           string
+	ShortDescription       string
+	SupportedLanguages     string
+	HeaderImage            string
+	CapsuleImage           string
+	CapsuleImagev5         string
+	Developers             string
+	Publishers             string
+	Windows                int
+	Mac                    int
+	Linux                  int
+	Categories             string
+	Genres                 string
+	ReleaseDate            string
+	Background             string
+}
+
+type Achievements struct {
+	Name         string `json:"name"`
+	Defaultvalue int    `json:"defaultvalue"`
+	DisplayName  string `json:"displayName"`
+	Hidden       int    `json:"hidden"`
+	Description  string `json:"description"`
+	Icon         string `json:"icon"`
+	Icongray     string `json:"icongray"`
+}
+
+type SteamAchievements struct {
+	Game struct {
+		GameName           string `json:"gameName"`
+		GameVersion        string `json:"gameVersion"`
+		AvailableGameStats struct {
+			Achievements []Achievements `json:"achievements"`
+			Stats        []struct {
+				Name         string `json:"name"`
+				Defaultvalue int    `json:"defaultvalue"`
+				DisplayName  string `json:"displayName"`
+			} `json:"stats"`
+		} `json:"availableGameStats"`
+	} `json:"game"`
+}
+
+type UserAchievements struct {
+	Apiname    string `json:"apiname,omitempty"`
+	Achieved   int    `json:"achieved,omitempty"`
+	Unlocktime int    `json:"unlocktime,omitempty"`
+}
+
+type SteamUserAchivements struct {
+	Playerstats struct {
+		SteamID      string             `json:"steamID,omitempty"`
+		GameName     string             `json:"gameName,omitempty"`
+		Achievements []UserAchievements `json:"achievements,omitempty"`
+		Success      bool               `json:"success,omitempty"`
+	} `json:"playerstats"`
+}
+
+type AppidAchivements struct {
+	UserAchievements UserAchievements
+	Achievements     Achievements
 }

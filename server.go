@@ -35,5 +35,7 @@ func main() {
 	e.GET("/updateSteamUserLibrary", handlers.UpdateSteamUserLibrary)
 	e.GET("/getSteamUserLibrary", handlers.GetSteamUserLibrary)
 	e.GET("/getSteamUserLibrary/:AppID", handlers.GetSteamUserLibraryAppid)
+	e.GET("/getSteamUserLibraryAchievements/:AppID", handlers.GetSteamUserLibraryAchievements)
+	e.GET("/updateSteamUserLibraryAchievements/:AppID", handlers.UpdateSteamUserLibraryAchievements)
 	e.Logger.Fatal(e.Start(":8000"))
 }
