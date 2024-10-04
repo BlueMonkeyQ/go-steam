@@ -1,0 +1,18 @@
+package views
+
+import (
+    "go-steam/views/layout"
+    "go-steam/model"
+    )
+
+templ ShowLibrary(library model.Library) {
+    @layout.Base(){
+
+        <h1>Steam User Library</h1>
+
+        for _, card := range library.Cards {
+            <img src="{{ card.CapsuleImage}}">
+            <li>{ card.Name }</li>
+        }
+    }
+}
