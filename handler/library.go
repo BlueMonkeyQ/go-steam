@@ -18,7 +18,7 @@ type Library struct{}
 func (l Library) ShowLibrary(c echo.Context) error {
 	fmt.Println("Endpoint: ShowLibrary")
 	data := services.GetLibrary()
-	fmt.Printf("Returning #%d Games", len(data.Cards))
+	fmt.Printf("Returning #%d Games \n", len(data.Cards))
 	return render(c, views.ShowLibrary(data))
 }
 
@@ -122,6 +122,38 @@ func (l Library) GetLibrary(c echo.Context) error {
 		} else {
 			fmt.Printf("Info: %d Already Exist\n", game.Appid)
 		}
+
+		// Steam User Achievements
+		exist, err = db.GetSteamUserAchievementsAppidDB(game.Appid)
+		if err != nil {
+			fmt.Printf("Fail: %s \n", err.Error())
+			break
+		}
+
+		if !exist {
+			userAchievements, err := services.GetSteamUserAchievements(game.Appid)
+			if err != nil {
+				if !strings.Contains(err.Error(), "False") {
+					fmt.Printf("Fail: %s \n", err.Error())
+					break
+				}
+			}
+
+			err = db.InsertSteamUserAchievementsDB(userAchievements, game.Appid)
+			if err != nil {
+				if strings.Contains(err.Error(), "UNIQUE") {
+					fmt.Println("Warning: Already Exist")
+				} else {
+					fmt.Printf("Fail: %s", err.Error())
+					break
+				}
+				continue
+			} else {
+				fmt.Println("Pass: Inserted")
+			}
+		} else {
+			fmt.Printf("Info: %d Already Exist\n", game.Appid)
+		}
 	}
 	return nil
 
@@ -134,7 +166,6 @@ func (l Library) ShowGame(c echo.Context) error {
 		c.Logger().Error(err)
 		return c.String(http.StatusBadRequest, "Invalid AppID")
 	}
-	fmt.Printf("Endpoint: UpdateAchievements; Param: %d \n", id)
 
 	data := services.GetGame(id)
 	return render(c, views.ShowGame(data))

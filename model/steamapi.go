@@ -61,6 +61,19 @@ type Achievements struct {
 	IconGray     string `json:"icongray"`
 }
 
+type UserAchievements struct {
+	Playerstats struct {
+		SteamID      string `json:"steamID"`
+		GameName     string `json:"gameName"`
+		Achievements []struct {
+			Apiname    string `json:"apiname"`
+			Achieved   int    `json:"achieved"`
+			Unlocktime int    `json:"unlocktime"`
+		} `json:"achievements"`
+		Success bool `json:"success"`
+	} `json:"playerstats"`
+}
+
 type AchievementsApi struct {
 	Game struct {
 		GameName           string `json:"gameName"`

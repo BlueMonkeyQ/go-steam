@@ -125,3 +125,25 @@ func GetSteamAchievements(id int) (model.AchievementsApi, error) {
 	return achievements, nil
 
 }
+
+func GetSteamUserAchievements(id int) (model.UserAchievements, error) {
+	fmt.Println("Endpoint: GetSteamAchievements")
+	url := fmt.Sprintf("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=%d&key=14EB214CEC3F1701FD192885D330990F&steamid=76561198050437739", id)
+	resp, err := http.Get(url)
+	if err != nil {
+		return model.UserAchievements{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return model.UserAchievements{}, err
+	}
+
+	var achievements model.UserAchievements
+	if err := json.Unmarshal(body, &achievements); err != nil {
+		return model.UserAchievements{}, err
+	}
+	return achievements, nil
+
+}

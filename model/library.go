@@ -6,6 +6,7 @@ type LibraryCard struct {
 	HeaderImage      string
 	RtimeLastPlayed  string
 	TotalAchivements string
+	TotalAchieved    string
 }
 
 type Library struct {

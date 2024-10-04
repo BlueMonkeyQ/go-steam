@@ -183,6 +183,26 @@ func GetSteamAchievementsAppidDB(id int) (bool, error) {
 	return exists, nil
 }
 
+func GetSteamUserAchievementsAppidDB(id int) (bool, error) {
+	fmt.Println("Database: GetSteamUserAchievementsAppidDB")
+	db, err := CreateConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM steamuserachievements WHERE Appid = ?)`
+	err = db.QueryRow(query, id).Scan(&exists)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+		return false, nil
+	}
+	return exists, nil
+}
+
 func GetSteamUserGamesDB(id int) (bool, error) {
 	fmt.Println("Database: GetSteamUserGamesDB")
 	db, err := CreateConnection()
@@ -217,7 +237,8 @@ func GetLibraryDB() (model.Library, error) {
 		sad.Name, 
 		IFNULL(sad.HeaderImage, '') AS HeaderImage,
 		sug.RtimeLastPlayed,
-		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements
+		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
+		(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
 		FROM steamappdetails AS sad
 		JOIN steamusergames AS sug ON sug.Appid = sad.Appid
 		WHERE sad.Appid IS NOT NULL AND sad.Appid != 0
@@ -238,6 +259,7 @@ func GetLibraryDB() (model.Library, error) {
 			&card.HeaderImage,
 			&card.RtimeLastPlayed,
 			&card.TotalAchivements,
+			&card.TotalAchieved,
 		)
 		if err != nil {
 			return model.Library{}, err
@@ -455,6 +477,56 @@ func InsertSteamAchievementsDB(data model.AchievementsApi, id int) error {
 			achievement.Description,
 			achievement.Icon,
 			achievement.IconGray,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertSteamUserAchievementsDB(data model.UserAchievements, id int) error {
+	fmt.Println("Database: InsertSteamUserAchievementsDB")
+
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO steamuserachievements (
+			Appid,
+			Apiname,
+			Achieved,
+			Unlocktime
+		) VALUES (?, ?, ?, ?)
+		ON CONFLICT(Appid, Apiname) DO UPDATE SET
+			Achieved=excluded.Achieved,
+			Unlocktime=excluded.Unlocktime
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, achievement := range data.Playerstats.Achievements {
+		_, err = stmt.Exec(
+			id,
+			achievement.Apiname,
+			achievement.Achieved,
+			achievement.Unlocktime,
 		)
 		if err != nil {
 			tx.Rollback()
