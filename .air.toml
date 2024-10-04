@@ -4,12 +4,12 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "tmp\\main.exe"
-  cmd = "go build -o ./tmp/main.exe ./cmd/main.go"
+  bin = "./tmp/main"
+  cmd = "templ generate && go build -o ./tmp/main cmd/main.go"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
-  exclude_regex = ["_templ.go"]
+  exclude_regex = ["templ.go"]
   exclude_unchanged = false
   follow_symlink = false
   full_bin = ""
@@ -22,7 +22,7 @@ tmp_dir = "tmp"
   poll_interval = 0
   post_cmd = []
   pre_cmd = []
-  rerun = false
+  rerun = true
   rerun_delay = 500
   send_interrupt = false
   stop_on_error = false

@@ -1,0 +1,43 @@
+package views
+
+import (
+    "go-steam/views/layout"
+    "go-steam/model"
+    )
+
+templ ShowGame(data model.GameData) {
+    @layout.Base(){
+        
+        <div>
+            <img src={ data.AppDetails.HeaderImage }>
+            <h1>{ data.AppDetails.Name }</h1>
+            <p>{ data.AppDetails.ShortDescripton }</p>
+
+            <h2>Achievements</h2>
+            for _, achievement := range data.Achievements {
+                <table>
+                    <tr>
+                        <th>Icon</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Unlocked On</th>
+                    </tr>
+                    <tr>
+                        if achievement.Achieved {
+                            <td><img src={ achievement.Icon }></td>
+                        } else {
+                            <td><img src={ achievement.IconGray }></td>
+                        }
+                        <td>{ achievement.Name }</td>
+                        <td>{ achievement.Description }</td>
+                        if achievement.Unlocktime == "0" {
+                            <td></td>
+                        } else {
+                            <td>{ achievement.Unlocktime }</td>
+                        }
+                    </tr>
+                </table>
+            }
+        </div>
+    }
+}

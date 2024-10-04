@@ -11,5 +11,6 @@ func main() {
 
 	l := handler.Library{}
 	e.GET("/", l.ShowLibrary)
+	e.GET("/getSteamUserLibrary/:AppID", l.ShowGame)
 	e.Logger.Fatal(e.Start(":8000"))
 }

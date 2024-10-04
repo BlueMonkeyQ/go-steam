@@ -756,7 +756,7 @@ func GetSteamUserLibraryAppid(id int) (Entry, error) {
 		&entry.HeaderImage,
 		&entry.CapsuleImage,
 		&entry.CapsuleImagev5,
-		&entry.Developers,
+
 		&entry.Publishers,
 		&entry.Windows,
 		&entry.Mac,
@@ -766,6 +766,10 @@ func GetSteamUserLibraryAppid(id int) (Entry, error) {
 		&entry.ReleaseDate,
 		&entry.Background,
 	)
+	// entry.Developers = strings.Split(entry.Developers, ",")
+	// entry.Publishers = strings.Split(entry.Publishers, ",")
+	// entry.Categories = strings.Split(entry.Categories, ",")
+	// entry.Genres = strings.Split(entry.Genres, ",")
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return Entry{}, nil

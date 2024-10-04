@@ -1,11 +1,45 @@
 package model
 
 type LibraryCard struct {
-	AppID        int
+	AppID        string
 	Name         string
 	CapsuleImage string
 }
 
 type Library struct {
 	Cards []LibraryCard
+}
+
+type Achievement struct {
+	Name        string
+	DisplayName string
+	Hidden      bool
+	Description string
+	Icon        string
+	IconGray    string
+	Achieved    bool
+	Unlocktime  string
+}
+
+type AppDetails struct {
+	AppID              string
+	Name               string
+	AboutTheGame       string
+	ShortDescripton    string
+	SupportedLanguages string
+	HeaderImage        string
+	Developers         []string
+	Publishers         []string
+	Windows            bool
+	Mac                bool
+	Linux              bool
+	Categories         []string
+	Genres             []string
+	ReleaseDate        string
+	Background         string
+}
+
+type GameData struct {
+	AppDetails   AppDetails
+	Achievements []Achievement
 }

@@ -14,3 +14,12 @@ func GetLibrary() model.Library {
 	}
 	return data
 }
+
+func GetGame(id int) model.GameData {
+	data, err := db.GetGameDB(id)
+	if err != nil {
+		fmt.Println(err)
+		return model.GameData{}
+	}
+	return data
+}
