@@ -12,6 +12,10 @@ templ ShowGame(data model.GameData) {
             <img src={ data.AppDetails.HeaderImage }>
             <h1>{ data.AppDetails.Name }</h1>
             <p>{ data.AppDetails.ShortDescripton }</p>
+            
+            <p>Last Updated: </p>
+            
+            <button hx-get={ "/updateAchivements/"+ data.AppDetails.AppID }>Update Achievements</button>            
 
             <h2>Achievements</h2>
             for _, achievement := range data.Achievements {

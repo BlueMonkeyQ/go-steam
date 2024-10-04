@@ -9,11 +9,15 @@ templ ShowLibrary(library model.Library) {
     @layout.Base(){
 
         <h1>Steam User Library</h1>
+        <button hx-get="/getLibrary">Update Library</button>
+        
         for _, card := range library.Cards {
             <a href={ templ.URL("/getSteamUserLibrary/" + card.AppID)}>
                 <div>
-                    <img src={ card.CapsuleImage }>
+                    <img src={ card.HeaderImage } alt="Whoops">
                     <li>{ card.Name }</li>
+                    <li>Last Played: { card.RtimeLastPlayed }</li>
+                    <li>Total Achivements # { card.TotalAchivements }</li>
                 </div>
             </a>
         }

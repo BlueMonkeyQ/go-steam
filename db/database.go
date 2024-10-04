@@ -12,6 +12,117 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func InitDatabase() {
+
+	_, err := os.Stat("steam.db")
+	if err != nil {
+		fmt.Println("Initializing Steam Database...")
+
+		if _, err = os.Create("steam.db"); err != nil {
+			msg := fmt.Sprintf("Error: %v", err)
+			fmt.Println(msg)
+			panic(err)
+		}
+
+		db, err := CreateConnection()
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+
+		var query string
+
+		fmt.Println("Creating Steam Users Games Table...")
+		query = `
+			CREATE TABLE IF NOT EXISTS steamusergames (
+		        id INTEGER PRIMARY KEY AUTOINCREMENT,
+				Appid INTEGER,
+		        PlaytimeForever INTEGER,
+		        PlaytimeWindowsForever INTEGER,
+		        PlaytimeMacForever INTEGER,
+		        PlaytimeLinuxForever INTEGER,
+		        PlaytimeDeckForever INTEGER,
+		        RtimeLastPlayed INTEGER,
+				Playtime2Weeks INTEGER,
+				UNIQUE(Appid)
+		    );
+			`
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Creating Steam App Details Games Table...")
+		query = `
+			CREATE TABLE IF NOT EXISTS steamappdetails (
+		        id INTEGER PRIMARY KEY AUTOINCREMENT,
+				Appid INTEGER,
+		        Type TEXT,
+				Name TEXT,
+				SteamAppid INTEGER,
+		        RequiredAge,
+				IsFree INTEGER,
+				DetailedDescription TEXT,
+				AboutTheGame TEXT,
+				ShortDescription TEXT,
+				SupportedLanguages TEXT,
+				HeaderImage TEXT,
+				CapsuleImage TEXT,
+				CapsuleImagev5 TEXT,
+				Developers TEXT,
+				Publishers TEXT,
+				Windows INTEGER,
+				Mac INTEGER,
+				Linux INTEGER,
+				Categories TEXT,
+				Genres TEXT,
+				ReleaseDate TEXT,
+				Background TEXT,
+				UNIQUE(Appid, SteamAppid)
+		    );
+			`
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Creating Steam Achievements Table...")
+		query = `
+			CREATE TABLE IF NOT EXISTS steamachievements (
+		        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		        Appid INTEGER,
+		        Name TEXT,
+				DisplayName TEXT,
+				Hidden INTEGER,
+				Description TEXT,
+				Icon TEXT,
+				IconGray TEXT,
+				UNIQUE(Appid, Name)
+		    );
+			`
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Creating Steam User Achievements Table...")
+		query = `
+			CREATE TABLE IF NOT EXISTS steamuserachievements (
+		        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		        Appid INTEGER,
+		        Apiname TEXT,
+		        Achieved INTEGER,
+		        Unlocktime INTEGER,
+				UNIQUE(Appid, Apiname)
+		    );
+			`
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 // Creates a connector to the Steam Sqlite3 Database
 func CreateConnection() (*sql.DB, error) {
 
@@ -32,6 +143,66 @@ func CreateConnection() (*sql.DB, error) {
 	return connector, nil
 }
 
+func GetSteamAppDetailsAppidDB(id int) (bool, error) {
+	fmt.Println("Database: GetSteamAppDetailsAppidDB")
+	db, err := CreateConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM steamappdetails WHERE SteamAppid = ?)`
+	err = db.QueryRow(query, id).Scan(&exists)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+		return false, nil
+	}
+	return exists, nil
+}
+
+func GetSteamAchievementsAppidDB(id int) (bool, error) {
+	fmt.Println("Database: GetSteamAchievementsAppidDB")
+	db, err := CreateConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM steamachievements WHERE Appid = ?)`
+	err = db.QueryRow(query, id).Scan(&exists)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+		return false, nil
+	}
+	return exists, nil
+}
+
+func GetSteamUserGamesDB(id int) (bool, error) {
+	fmt.Println("Database: GetSteamUserGamesDB")
+	db, err := CreateConnection()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM steamusergames WHERE Appid = ?)`
+	err = db.QueryRow(query, id).Scan(&exists)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+		return false, nil
+	}
+	return exists, nil
+}
+
 func GetLibraryDB() (model.Library, error) {
 	fmt.Println("Database: GetLibraryDB")
 	db, err := CreateConnection()
@@ -41,8 +212,15 @@ func GetLibraryDB() (model.Library, error) {
 	defer db.Close()
 
 	var query = `
-		SELECT SteamAppid, Name, CapsuleImage
-		FROM steamappdetails
+		SELECT 
+		sad.Appid, 
+		sad.Name, 
+		IFNULL(sad.HeaderImage, '') AS HeaderImage,
+		sug.RtimeLastPlayed,
+		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements
+		FROM steamappdetails AS sad
+		JOIN steamusergames AS sug ON sug.Appid = sad.Appid
+		WHERE sad.Appid IS NOT NULL AND sad.Appid != 0
 	`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -57,11 +235,23 @@ func GetLibraryDB() (model.Library, error) {
 		err = rows.Scan(
 			&card.AppID,
 			&card.Name,
-			&card.CapsuleImage,
+			&card.HeaderImage,
+			&card.RtimeLastPlayed,
+			&card.TotalAchivements,
 		)
 		if err != nil {
 			return model.Library{}, err
 		}
+
+		unlockTimeInt, err := strconv.ParseInt(card.RtimeLastPlayed, 10, 64)
+		if err != nil {
+			unlockTimeInt = 0
+		}
+
+		if unlockTimeInt != 0 {
+			card.RtimeLastPlayed = time.Unix(unlockTimeInt, 0).Format(time.RFC1123)
+		}
+
 		library.Cards = append(library.Cards, card)
 	}
 	return library, nil
@@ -77,6 +267,7 @@ func GetGameDB(id int) (model.GameData, error) {
 
 	var query = `
 		SELECT 
+			sad.Appid,
 			sad.SteamAppid,
 			sad.Name,
 			sad.AboutTheGame,
@@ -93,7 +284,7 @@ func GetGameDB(id int) (model.GameData, error) {
 			sad.ReleaseDate,
 			sad.Background
 		FROM steamappdetails as sad
-		WHERE sad.SteamAppid = ?
+		WHERE sad.Appid = ?
 	`
 
 	var gameData model.GameData
@@ -103,6 +294,7 @@ func GetGameDB(id int) (model.GameData, error) {
 	var genres string
 	err = db.QueryRow(query, id).Scan(
 		&gameData.AppDetails.AppID,
+		&gameData.AppDetails.SteamAppID,
 		&gameData.AppDetails.Name,
 		&gameData.AppDetails.AboutTheGame,
 		&gameData.AppDetails.ShortDescripton,
@@ -178,4 +370,167 @@ func GetGameDB(id int) (model.GameData, error) {
 	}
 
 	return gameData, nil
+}
+
+func InsertSteamUserGamesDB(data model.Games) error {
+	fmt.Println("Database: InsertSteamUserGamesDB")
+
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query string = `
+	INSERT INTO steamusergames (
+	Appid,
+	PlaytimeForever,
+	PlaytimeWindowsForever,
+	PlaytimeMacForever,
+	PlaytimeLinuxForever,
+	PlaytimeDeckForever,
+	RtimeLastPlayed,
+	Playtime2Weeks
+	)
+	VALUES (?,?,?,?,?,?,?,?);
+	`
+	_, err = db.Exec(query,
+		data.Appid,
+		data.PlaytimeForever,
+		data.PlaytimeWindowsForever,
+		data.PlaytimeMacForever,
+		data.PlaytimeLinuxForever,
+		data.PlaytimeDeckForever,
+		data.RtimeLastPlayed,
+		data.Playtime2Weeks,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertSteamAchievementsDB(data model.AchievementsApi, id int) error {
+	fmt.Println("Database: InsertSteamAchievementsDB")
+
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO steamachievements (
+			Appid,
+			Name,
+			DisplayName,
+			Hidden,
+			Description,
+			Icon,
+			IconGray
+		) VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(Appid, Name) DO UPDATE SET
+			DisplayName=excluded.DisplayName,
+			Hidden=excluded.Hidden,
+			Description=excluded.Description,
+			Icon=excluded.Icon,
+			IconGray=excluded.IconGray
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, achievement := range data.Game.AvailableGameStats.Achievements {
+		_, err = stmt.Exec(
+			id,
+			achievement.Name,
+			achievement.DisplayName,
+			achievement.Hidden,
+			achievement.Description,
+			achievement.Icon,
+			achievement.IconGray,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertSteamAppDetailsDB(data model.AppDetailsAPI, id int) error {
+	fmt.Println("Database: InsertSteamAppDetailsDB")
+	fmt.Println(data.SteamAppid)
+
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query string = `
+		INSERT INTO steamappdetails (
+			Appid,
+			SteamAppid,
+			Name,
+			AboutTheGame,
+			ShortDescription,
+			SupportedLanguages,
+			HeaderImage,
+			Developers,
+			Publishers,
+			Windows,
+			Mac,
+			Linux,
+			Categories,
+			Genres,
+			ReleaseDate,
+			Background
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+	`
+
+	var categories []string
+	for _, i := range data.Categories {
+		categories = append(categories, i.Description)
+	}
+	var genres []string
+	for _, i := range data.Genres {
+		genres = append(genres, i.Description)
+	}
+	_, err = db.Exec(query,
+		id,
+		data.SteamAppid,
+		data.Name,
+		data.AboutTheGame,
+		data.ShortDescription,
+		data.SupportedLanguages,
+		data.HeaderImage,
+		strings.Join(data.Developers, ","),
+		strings.Join(data.Publishers, ","),
+		data.Platforms.Windows,
+		data.Platforms.Mac,
+		data.Platforms.Linux,
+		strings.Join(categories, ","),
+		strings.Join(genres, ","),
+		data.ReleaseDate.Date,
+		data.Background,
+	)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }

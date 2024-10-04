@@ -1,9 +1,11 @@
 package model
 
 type LibraryCard struct {
-	AppID        string
-	Name         string
-	CapsuleImage string
+	AppID            string
+	Name             string
+	HeaderImage      string
+	RtimeLastPlayed  string
+	TotalAchivements string
 }
 
 type Library struct {
@@ -23,6 +25,7 @@ type Achievement struct {
 
 type AppDetails struct {
 	AppID              string
+	SteamAppID         string
 	Name               string
 	AboutTheGame       string
 	ShortDescripton    string
