@@ -127,7 +127,7 @@ func GetSteamAchievements(id int) (model.AchievementsApi, error) {
 }
 
 func GetSteamUserAchievements(id int) (model.UserAchievements, error) {
-	fmt.Println("Endpoint: GetSteamAchievements")
+	fmt.Println("Endpoint: GetSteamUserAchievements")
 	url := fmt.Sprintf("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=%d&key=14EB214CEC3F1701FD192885D330990F&steamid=76561198050437739", id)
 	resp, err := http.Get(url)
 	if err != nil {

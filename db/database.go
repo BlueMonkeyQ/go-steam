@@ -44,6 +44,7 @@ func InitDatabase() {
 		        PlaytimeDeckForever INTEGER,
 		        RtimeLastPlayed INTEGER,
 				Playtime2Weeks INTEGER,
+				LastUpdated TEXT,
 				UNIQUE(Appid)
 		    );
 			`
@@ -304,8 +305,10 @@ func GetGameDB(id int) (model.GameData, error) {
 			sad.Categories,
 			sad.Genres,
 			sad.ReleaseDate,
-			sad.Background
+			sad.Background,
+			IFNULL(sug.LastUpdated, "") AS LastUpdated
 		FROM steamappdetails as sad
+		JOIN steamusergames as sug ON sug.Appid = sad.Appid
 		WHERE sad.Appid = ?
 	`
 
@@ -331,6 +334,7 @@ func GetGameDB(id int) (model.GameData, error) {
 		&genres,
 		&gameData.AppDetails.ReleaseDate,
 		&gameData.AppDetails.Background,
+		&gameData.LastUpdated,
 	)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -394,7 +398,7 @@ func GetGameDB(id int) (model.GameData, error) {
 	return gameData, nil
 }
 
-func InsertSteamUserGamesDB(data model.Games) error {
+func InsertSteamUserGamesDB(data model.Games, lastUpdated string) error {
 	fmt.Println("Database: InsertSteamUserGamesDB")
 
 	db, err := CreateConnection()
@@ -412,7 +416,8 @@ func InsertSteamUserGamesDB(data model.Games) error {
 	PlaytimeLinuxForever,
 	PlaytimeDeckForever,
 	RtimeLastPlayed,
-	Playtime2Weeks
+	Playtime2Weeks,
+	LastUpdated
 	)
 	VALUES (?,?,?,?,?,?,?,?);
 	`
@@ -425,6 +430,7 @@ func InsertSteamUserGamesDB(data model.Games) error {
 		data.PlaytimeDeckForever,
 		data.RtimeLastPlayed,
 		data.Playtime2Weeks,
+		lastUpdated,
 	)
 	if err != nil {
 		return err
@@ -602,6 +608,28 @@ func InsertSteamAppDetailsDB(data model.AppDetailsAPI, id int) error {
 
 	if err != nil {
 		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+func UpdateSteamUserGamesLastUpdated(id int, lastUpdated string) error {
+	fmt.Println("Database: UpdateSteamUserGamesLastUpdated")
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var query string = `
+		UPDATE steamusergames 
+		SET
+		LastUpdated = ?
+		WHERE Appid = ?
+	`
+
+	_, err = db.Exec(query, lastUpdated, id)
+	if err != nil {
 		return err
 	}
 	return nil

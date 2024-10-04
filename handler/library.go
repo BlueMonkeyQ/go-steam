@@ -42,8 +42,9 @@ func (l Library) GetLibrary(c echo.Context) error {
 			fmt.Printf("Fail: %s \n", err.Error())
 			break
 		}
+		timestamp := time.Now().Local().Format(time.DateOnly)
 		if !exist {
-			err := db.InsertSteamUserGamesDB(game)
+			err := db.InsertSteamUserGamesDB(game, timestamp)
 			if err != nil {
 				if strings.Contains(err.Error(), "UNIQUE") {
 					fmt.Println("Warning: Already Exist")
@@ -179,8 +180,30 @@ func (l Library) UpdateAchievements(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid AppID")
 	}
 
-	timestamp := time.Now().Format(time.RFC3339)
-	fmt.Printf("Current Timestamp: %s\n", timestamp)
+	timestamp := time.Now().Local().Format(time.DateOnly)
+
+	err = db.UpdateSteamUserGamesLastUpdated(id, timestamp)
+	if err != nil {
+		fmt.Printf("Fail: %s \n", err.Error())
+	}
+
+	userAchievements, err := services.GetSteamUserAchievements(id)
+	if err != nil {
+		if !strings.Contains(err.Error(), "False") {
+			fmt.Printf("Fail: %s \n", err.Error())
+		}
+	}
+
+	err = db.InsertSteamUserAchievementsDB(userAchievements, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") {
+			fmt.Println("Warning: Already Exist")
+		} else {
+			fmt.Printf("Fail: %s", err.Error())
+		}
+	} else {
+		fmt.Println("Pass: Inserted")
+	}
 
 	fmt.Printf("Endpoint: UpdateAchievements; Param: %d \n", id)
 	return nil

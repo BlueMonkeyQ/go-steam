@@ -46,4 +46,5 @@ type AppDetails struct {
 type GameData struct {
 	AppDetails   AppDetails
 	Achievements []Achievement
+	LastUpdated  string
 }

@@ -13,7 +13,7 @@ templ ShowGame(data model.GameData) {
             <h1>{ data.AppDetails.Name }</h1>
             <p>{ data.AppDetails.ShortDescripton }</p>
             
-            <p>Last Updated: </p>
+            <p>Last Updated: { data.LastUpdated } </p>
             
             <button hx-get={ "/updateAchivements/"+ data.AppDetails.AppID }>Update Achievements</button>            
 
