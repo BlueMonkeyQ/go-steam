@@ -10,11 +10,10 @@ import (
 func main() {
 	db.InitDatabase()
 	e := echo.New()
-
-	l := handler.Library{}
-	e.GET("/", l.GetLibrary)
-	e.GET("/getLibraryFilter", l.GetLibraryFiltered)
-	e.GET("/getSteamUserLibrary/:AppID", l.ShowGame)
-	e.GET("/updateAchivements/:AppID", l.UpdateAchievements)
+	e.GET("/", handler.GetLibrary)
+	e.GET("/getLibraryFilter", handler.GetLibraryFiltered)
+	e.GET("/updateLibrary", handler.UpdateLibrary)
+	e.GET("/getSteamUserLibrary/:AppID", handler.GetDetailsPage)
+	e.GET("/updateAchivements/:AppID", handler.UpdateAchievements)
 	e.Logger.Fatal(e.Start(":8000"))
 }

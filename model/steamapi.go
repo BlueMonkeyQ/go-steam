@@ -51,7 +51,7 @@ type AppDetailsAPI struct {
 	Background string `json:"background"`
 }
 
-type Achievements struct {
+type AchievementsAPI struct {
 	Name         string `json:"name"`
 	Defaultvalue int    `json:"defaultvalue"`
 	DisplayName  string `json:"displayName"`
@@ -79,7 +79,7 @@ type AchievementsApi struct {
 		GameName           string `json:"gameName"`
 		GameVersion        string `json:"gameVersion"`
 		AvailableGameStats struct {
-			Achievements []Achievements `json:"achievements"`
+			Achievements []AchievementsAPI `json:"achievements"`
 			Stats        []struct {
 				Name         string `json:"name"`
 				Defaultvalue int    `json:"defaultvalue"`

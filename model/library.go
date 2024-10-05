@@ -43,8 +43,12 @@ type AppDetails struct {
 	Background         string
 }
 
-type GameData struct {
-	AppDetails   AppDetails
+type AchivementDetails struct {
 	Achievements []Achievement
 	LastUpdated  string
+}
+
+type GameData struct {
+	AppDetails   AppDetails
+	Achievements AchivementDetails
 }

@@ -8,7 +8,13 @@ import (
 templ ShowLibrary(library model.Library) {
     @layout.Base(){    
         <h1>Steam User Library</h1>
-        <button hx-get="/updateLibrary">Update Library</button>
+        <button 
+        hx-get="/updateLibrary"
+        hx-target="#library-cards"
+        hx-swap="outerHTML"
+        >
+        Update Library
+        </button>
 
         <input 
         type="search"
@@ -22,4 +28,25 @@ templ ShowLibrary(library model.Library) {
         >
         @LibraryCards(library)
     }
+}
+
+templ LibraryCard(card model.LibraryCard) {
+    <div id={ "library-card-" + card.AppID }>
+        <a href={ templ.URL("/getSteamUserLibrary/" + card.AppID)}>
+            <div>
+                <img src={ card.HeaderImage } alt="Whoops">
+                <li>{ card.Name }</li>
+                <li>Last Played: { card.RtimeLastPlayed }</li>
+                <li>{ card.TotalAchieved } / { card.TotalAchivements }</li>
+            </div>
+        </a>
+    </div>
+}
+
+templ LibraryCards(library model.Library) {
+    <div id="library-cards">
+        for _, card := range library.Cards {
+        @LibraryCard(card)
+        }
+    </div>
 }

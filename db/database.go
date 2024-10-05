@@ -124,7 +124,6 @@ func InitDatabase() {
 	}
 }
 
-// Creates a connector to the Steam Sqlite3 Database
 func CreateConnection() (*sql.DB, error) {
 
 	_, err := os.Stat("steam.db")
@@ -184,7 +183,7 @@ func GetSteamAchievementsAppidDB(id int) (bool, error) {
 	return exists, nil
 }
 
-func GetSteamUserAchievementsAppidDB(id int) (bool, error) {
+func ExistSteamUserAchievementsAppidDB(id int) (bool, error) {
 	fmt.Println("Database: GetSteamUserAchievementsAppidDB")
 	db, err := CreateConnection()
 	if err != nil {
@@ -300,8 +299,68 @@ func GetLibraryDB(filter string) (model.Library, error) {
 	return library, nil
 }
 
-func GetGameDB(id int) (model.GameData, error) {
-	fmt.Println("Database: GetGameDB")
+// Causes computer to brick, do not use
+func GetSteamUserAchievementsAppidDB(id int) (model.AchivementDetails, error) {
+	fmt.Println("Database: GetSteamUserAchievementsAppidDB")
+	db, err := CreateConnection()
+	if err != nil {
+		return model.AchivementDetails{}, err
+	}
+	defer db.Close()
+
+	query := `
+	SELECT
+	sa.Name,
+	sa.DisplayName,
+	sa.Hidden,
+	sa.Description,
+	sa.Icon,
+	sa.IconGray,
+	sua.Achieved,
+	sua.UnlockTime
+	FROM steamachievements AS sa
+	JOIN steamuserachievements AS sua ON sua.Appid = sua.Appid
+	WHERE sa.Appid = ?`
+	rows, err := db.Query(query, id)
+	if err != nil {
+		return model.AchivementDetails{}, err
+	}
+	defer rows.Close()
+
+	var achievementDetails model.AchivementDetails
+
+	for rows.Next() {
+		var achievement model.Achievement
+		err = rows.Scan(
+			&achievement.Name,
+			&achievement.DisplayName,
+			&achievement.Hidden,
+			&achievement.Description,
+			&achievement.Icon,
+			&achievement.IconGray,
+			&achievement.Achieved,
+			&achievement.Unlocktime,
+		)
+		if err != nil {
+			return model.AchivementDetails{}, err
+		}
+
+		unlockTimeInt, err := strconv.ParseInt(achievement.Unlocktime, 10, 64)
+		if err != nil {
+			unlockTimeInt = 0
+		}
+
+		if unlockTimeInt != 0 {
+			achievement.Unlocktime = time.Unix(unlockTimeInt, 0).Format(time.RFC1123)
+		}
+
+		achievementDetails.Achievements = append(achievementDetails.Achievements, achievement)
+	}
+	return achievementDetails, nil
+}
+
+func GetGameDetailsDB(id int) (model.GameData, error) {
+	fmt.Println("Database: GetGameDetailsDB")
 	db, err := CreateConnection()
 	if err != nil {
 		return model.GameData{}, err
@@ -354,7 +413,7 @@ func GetGameDB(id int) (model.GameData, error) {
 		&genres,
 		&gameData.AppDetails.ReleaseDate,
 		&gameData.AppDetails.Background,
-		&gameData.LastUpdated,
+		&gameData.Achievements.LastUpdated,
 	)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -412,7 +471,7 @@ func GetGameDB(id int) (model.GameData, error) {
 			achievement.Unlocktime = time.Unix(unlockTimeInt, 0).Format(time.RFC1123)
 		}
 
-		gameData.Achievements = append(gameData.Achievements, achievement)
+		gameData.Achievements.Achievements = append(gameData.Achievements.Achievements, achievement)
 	}
 
 	return gameData, nil

@@ -19,15 +19,6 @@ func GetLibrary(filter string) model.Library {
 	return data
 }
 
-func GetGame(id int) model.GameData {
-	data, err := db.GetGameDB(id)
-	if err != nil {
-		fmt.Println(err)
-		return model.GameData{}
-	}
-	return data
-}
-
 func GetSteamUserGames() (model.GetOwnedGamesAPI, error) {
 	fmt.Println("Endpoint: GetOwnedGames")
 	resp, err := http.Get("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=14EB214CEC3F1701FD192885D330990F&steamid=76561198050437739&format=json")

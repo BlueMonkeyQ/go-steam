@@ -5,17 +5,13 @@ import (
 	"go-steam/db"
 	"go-steam/services"
 	"go-steam/views"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo"
 )
 
-type Library struct{}
-
-func (l Library) GetLibraryFiltered(c echo.Context) error {
+func GetLibraryFiltered(c echo.Context) error {
 	title := c.QueryParam("filter")
 	fmt.Printf("Endpoint: ShowLibraryFiltered: %s \n", title)
 
@@ -24,27 +20,24 @@ func (l Library) GetLibraryFiltered(c echo.Context) error {
 	return render(c, views.LibraryCards(data))
 }
 
-func (l Library) GetLibrary(c echo.Context) error {
+func GetLibrary(c echo.Context) error {
 	fmt.Println("Endpoint: GetLibrary")
 
 	data := services.GetLibrary("")
 	fmt.Printf("Returning #%d Games \n", len(data.Cards))
 	return render(c, views.ShowLibrary(data))
-
 }
 
-func (l Library) UpdateLibrary(c echo.Context) error {
+func UpdateLibrary(c echo.Context) error {
 	fmt.Println("Endpoint: UpdateLibrary")
 	getOwnedGames, err := services.GetSteamUserGames()
 	if err != nil {
 		fmt.Printf("Fail: %s", err.Error())
 	}
-
 	fmt.Printf("#%d Games\n", getOwnedGames.Response.GameCount)
+
+	timestamp := time.Now().Local().Format(time.RFC850)
 	for i, game := range getOwnedGames.Response.Games {
-		// if game.Appid != 10190 {
-		// 	continue
-		// }
 		fmt.Printf("#%d AppID: %d \n", i, game.Appid)
 
 		// Steam User Game
@@ -53,7 +46,6 @@ func (l Library) UpdateLibrary(c echo.Context) error {
 			fmt.Printf("Fail: %s \n", err.Error())
 			break
 		}
-		timestamp := time.Now().Local().Format(time.DateOnly)
 		if !exist {
 			err := db.InsertSteamUserGamesDB(game, timestamp)
 			if err != nil {
@@ -136,13 +128,17 @@ func (l Library) UpdateLibrary(c echo.Context) error {
 		}
 
 		// Steam User Achievements
-		exist, err = db.GetSteamUserAchievementsAppidDB(game.Appid)
+		exist, err = db.ExistSteamUserAchievementsAppidDB(game.Appid)
 		if err != nil {
 			fmt.Printf("Fail: %s \n", err.Error())
 			break
 		}
 
 		if !exist {
+			err = db.UpdateSteamUserGamesLastUpdated(game.Appid, timestamp)
+			if err != nil {
+				fmt.Printf("Fail: %s \n", err.Error())
+			}
 			userAchievements, err := services.GetSteamUserAchievements(game.Appid)
 			if err != nil {
 				if !strings.Contains(err.Error(), "False") {
@@ -167,55 +163,7 @@ func (l Library) UpdateLibrary(c echo.Context) error {
 			fmt.Printf("Info: %d Already Exist\n", game.Appid)
 		}
 	}
-	return nil
-
-}
-
-func (l Library) ShowGame(c echo.Context) error {
-	param := c.Param("AppID")
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		c.Logger().Error(err)
-		return c.String(http.StatusBadRequest, "Invalid AppID")
-	}
-
-	data := services.GetGame(id)
-	return render(c, views.ShowGame(data))
-}
-
-func (l Library) UpdateAchievements(c echo.Context) error {
-	param := c.Param("AppID")
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		c.Logger().Error(err)
-		return c.String(http.StatusBadRequest, "Invalid AppID")
-	}
-
-	timestamp := time.Now().Local().Format(time.DateOnly)
-
-	err = db.UpdateSteamUserGamesLastUpdated(id, timestamp)
-	if err != nil {
-		fmt.Printf("Fail: %s \n", err.Error())
-	}
-
-	userAchievements, err := services.GetSteamUserAchievements(id)
-	if err != nil {
-		if !strings.Contains(err.Error(), "False") {
-			fmt.Printf("Fail: %s \n", err.Error())
-		}
-	}
-
-	err = db.InsertSteamUserAchievementsDB(userAchievements, id)
-	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE") {
-			fmt.Println("Warning: Already Exist")
-		} else {
-			fmt.Printf("Fail: %s", err.Error())
-		}
-	} else {
-		fmt.Println("Pass: Inserted")
-	}
-
-	fmt.Printf("Endpoint: UpdateAchievements; Param: %d \n", id)
-	return nil
+	data := services.GetLibrary("")
+	fmt.Printf("Returning #%d Games \n", len(data.Cards))
+	return render(c, views.LibraryCards(data))
 }
