@@ -1,0 +1,24 @@
+package views
+
+import "go-steam/model"
+
+templ LibraryCard(card model.LibraryCard) {
+    <div id={ "library-card-" + card.AppID }>
+        <a href={ templ.URL("/getSteamUserLibrary/" + card.AppID)}>
+            <div>
+                <img src={ card.HeaderImage } alt="Whoops">
+                <li>{ card.Name }</li>
+                <li>Last Played: { card.RtimeLastPlayed }</li>
+                <li>{ card.TotalAchieved } / { card.TotalAchivements }</li>
+            </div>
+        </a>
+    </div>
+}
+
+templ LibraryCards(library model.Library) {
+    <div id="library-cards">
+        for _, card := range library.Cards {
+        @LibraryCard(card)
+        }
+    </div>
+}

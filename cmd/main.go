@@ -12,8 +12,8 @@ func main() {
 	e := echo.New()
 
 	l := handler.Library{}
-	e.GET("/", l.ShowLibrary)
-	e.GET("/getLibrary", l.GetLibrary)
+	e.GET("/", l.GetLibrary)
+	e.GET("/getLibraryFilter", l.GetLibraryFiltered)
 	e.GET("/getSteamUserLibrary/:AppID", l.ShowGame)
 	e.GET("/updateAchivements/:AppID", l.UpdateAchievements)
 	e.Logger.Fatal(e.Start(":8000"))

@@ -15,15 +15,26 @@ import (
 
 type Library struct{}
 
-func (l Library) ShowLibrary(c echo.Context) error {
-	fmt.Println("Endpoint: ShowLibrary")
-	data := services.GetLibrary()
+func (l Library) GetLibraryFiltered(c echo.Context) error {
+	title := c.QueryParam("filter")
+	fmt.Printf("Endpoint: ShowLibraryFiltered: %s \n", title)
+
+	data := services.GetLibrary(title)
 	fmt.Printf("Returning #%d Games \n", len(data.Cards))
-	return render(c, views.ShowLibrary(data))
+	return render(c, views.LibraryCards(data))
 }
 
 func (l Library) GetLibrary(c echo.Context) error {
 	fmt.Println("Endpoint: GetLibrary")
+
+	data := services.GetLibrary("")
+	fmt.Printf("Returning #%d Games \n", len(data.Cards))
+	return render(c, views.ShowLibrary(data))
+
+}
+
+func (l Library) UpdateLibrary(c echo.Context) error {
+	fmt.Println("Endpoint: UpdateLibrary")
 	getOwnedGames, err := services.GetSteamUserGames()
 	if err != nil {
 		fmt.Printf("Fail: %s", err.Error())

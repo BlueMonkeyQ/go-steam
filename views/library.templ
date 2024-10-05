@@ -6,20 +6,20 @@ import (
     )
 
 templ ShowLibrary(library model.Library) {
-    @layout.Base(){
-
+    @layout.Base(){    
         <h1>Steam User Library</h1>
-        <button hx-get="/getLibrary">Update Library</button>
-        
-        for _, card := range library.Cards {
-            <a href={ templ.URL("/getSteamUserLibrary/" + card.AppID)}>
-                <div>
-                    <img src={ card.HeaderImage } alt="Whoops">
-                    <li>{ card.Name }</li>
-                    <li>Last Played: { card.RtimeLastPlayed }</li>
-                    <li>{ card.TotalAchieved } / { card.TotalAchivements }</li>
-                </div>
-            </a>
-        }
+        <button hx-get="/updateLibrary">Update Library</button>
+
+        <input 
+        type="search"
+        name="filter"
+        placeholder="Search Game Title"
+        hx-trigger="input changed delay:500ms, search"
+        hx-get="/getLibraryFilter" 
+        hx-vals="{'filter': this.value}"
+        hx-target="#library-cards"
+        hx-swap="outerHTML"
+        >
+        @LibraryCards(library)
     }
 }

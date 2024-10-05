@@ -224,7 +224,7 @@ func GetSteamUserGamesDB(id int) (bool, error) {
 	return exists, nil
 }
 
-func GetLibraryDB() (model.Library, error) {
+func GetLibraryDB(filter string) (model.Library, error) {
 	fmt.Println("Database: GetLibraryDB")
 	db, err := CreateConnection()
 	if err != nil {
@@ -232,7 +232,9 @@ func GetLibraryDB() (model.Library, error) {
 	}
 	defer db.Close()
 
-	var query = `
+	var query string
+	if filter == "" {
+		query = `
 		SELECT 
 		sad.Appid, 
 		sad.Name, 
@@ -242,9 +244,27 @@ func GetLibraryDB() (model.Library, error) {
 		(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
 		FROM steamappdetails AS sad
 		JOIN steamusergames AS sug ON sug.Appid = sad.Appid
-		WHERE sad.Appid IS NOT NULL AND sad.Appid != 0
+		WHERE sad.Appid IS NOT NULL 
+		AND sad.Appid != 0 
 	`
-	rows, err := db.Query(query)
+	} else {
+		query = `
+		SELECT 
+		sad.Appid, 
+		sad.Name, 
+		IFNULL(sad.HeaderImage, '') AS HeaderImage,
+		sug.RtimeLastPlayed,
+		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
+		(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
+		FROM steamappdetails AS sad
+		JOIN steamusergames AS sug ON sug.Appid = sad.Appid
+		WHERE sad.Appid IS NOT NULL 
+		AND sad.Appid != 0
+		AND sad.Name LIKE '%' || ? || '%'
+	`
+
+	}
+	rows, err := db.Query(query, filter)
 	if err != nil {
 		return model.Library{}, err
 	}

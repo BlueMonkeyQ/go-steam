@@ -10,8 +10,8 @@ import (
 	"net/http"
 )
 
-func GetLibrary() model.Library {
-	data, err := db.GetLibraryDB()
+func GetLibrary(filter string) model.Library {
+	data, err := db.GetLibraryDB(filter)
 	if err != nil {
 		fmt.Println(err)
 		return model.Library{}
