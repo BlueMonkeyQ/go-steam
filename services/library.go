@@ -8,6 +8,8 @@ import (
 	"go-steam/model"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 )
 
 func GetLibrary(filter string) model.Library {
@@ -17,6 +19,136 @@ func GetLibrary(filter string) model.Library {
 		return model.Library{}
 	}
 	return data
+}
+
+func UpdateLibrary(data model.GetOwnedGamesAPI) {
+	timestamp := time.Now().Local().Format(time.RFC850)
+	for i, game := range data.Response.Games {
+		fmt.Printf("#%d AppID: %d \n", i, game.Appid)
+
+		// Steam User Game
+		exist, err := db.GetSteamUserGamesDB(game.Appid)
+		if err != nil {
+			fmt.Printf("Fail: %s \n", err.Error())
+			break
+		}
+		if !exist {
+			err := db.InsertSteamUserGamesDB(game, timestamp)
+			if err != nil {
+				if strings.Contains(err.Error(), "UNIQUE") {
+					fmt.Println("Warning: Already Exist")
+				} else {
+					fmt.Printf("Fail: %s", err.Error())
+					break
+				}
+			} else {
+				fmt.Println("Pass: Inserted")
+			}
+
+		} else {
+			fmt.Printf("Info: %d Already Exist\n", game.Appid)
+		}
+
+		// Steam App Details
+		exist, err = db.GetSteamAppDetailsAppidDB(game.Appid)
+		if err != nil {
+			fmt.Printf("Fail: %s \n", err.Error())
+			break
+		}
+
+		if !exist {
+			appDetails, err := GetSteamAppDetail(game.Appid)
+			if err != nil {
+				if !strings.Contains(err.Error(), "False") {
+					fmt.Printf("Fail: %s \n", err.Error())
+					break
+				}
+			}
+
+			err = db.InsertSteamAppDetailsDB(appDetails, game.Appid)
+			if err != nil {
+				if strings.Contains(err.Error(), "UNIQUE") {
+					fmt.Println("Warning: Already Exist")
+				} else {
+					fmt.Printf("Fail: %s", err.Error())
+					break
+				}
+				continue
+			} else {
+				fmt.Println("Pass: Inserted")
+			}
+		} else {
+			fmt.Printf("Info: %d Already Exist\n", game.Appid)
+		}
+
+		// Steam Achievements
+		exist, err = db.GetSteamAchievementsAppidDB(game.Appid)
+		if err != nil {
+			fmt.Printf("Fail: %s \n", err.Error())
+			break
+		}
+
+		if !exist {
+			achievements, err := GetSteamAchievements(game.Appid)
+			if err != nil {
+				if !strings.Contains(err.Error(), "False") {
+					fmt.Printf("Fail: %s \n", err.Error())
+					break
+				}
+			}
+
+			err = db.InsertSteamAchievementsDB(achievements, game.Appid)
+			if err != nil {
+				if strings.Contains(err.Error(), "UNIQUE") {
+					fmt.Println("Warning: Already Exist")
+				} else {
+					fmt.Printf("Fail: %s", err.Error())
+					break
+				}
+				continue
+			} else {
+				fmt.Println("Pass: Inserted")
+			}
+		} else {
+			fmt.Printf("Info: %d Already Exist\n", game.Appid)
+		}
+
+		// Steam User Achievements
+		exist, err = db.ExistSteamUserAchievementsAppidDB(game.Appid)
+		if err != nil {
+			fmt.Printf("Fail: %s \n", err.Error())
+			break
+		}
+
+		if !exist {
+			err = db.UpdateSteamUserGamesLastUpdated(game.Appid, timestamp)
+			if err != nil {
+				fmt.Printf("Fail: %s \n", err.Error())
+			}
+			userAchievements, err := GetSteamUserAchievements(game.Appid)
+			if err != nil {
+				if !strings.Contains(err.Error(), "False") {
+					fmt.Printf("Fail: %s \n", err.Error())
+					break
+				}
+			}
+
+			err = db.InsertSteamUserAchievementsDB(userAchievements, game.Appid)
+			if err != nil {
+				if strings.Contains(err.Error(), "UNIQUE") {
+					fmt.Println("Warning: Already Exist")
+				} else {
+					fmt.Printf("Fail: %s", err.Error())
+					break
+				}
+				continue
+			} else {
+				fmt.Println("Pass: Inserted")
+			}
+		} else {
+			fmt.Printf("Info: %d Already Exist\n", game.Appid)
+		}
+	}
 }
 
 func GetSteamUserGames() (model.GetOwnedGamesAPI, error) {
