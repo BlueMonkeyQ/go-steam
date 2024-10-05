@@ -9,12 +9,17 @@ templ Base() {
     </head>
 
     <body>
-    <button>
-    <a href="/">Home</a>
-    </button>
+    @Navbar()
 
     { children... }
     </body>
 
     </html>
+}
+
+templ Navbar() {
+    <ul>
+    <li><a href="/">Library</a></li>
+    <li><a href="/friendsList">Friends</a></li>
+    </ul>
 }

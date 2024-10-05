@@ -25,7 +25,7 @@ func GetLibrary(c echo.Context) error {
 
 	data := services.GetLibrary("")
 	fmt.Printf("Returning #%d Games \n", len(data.Cards))
-	return render(c, views.ShowLibrary(data))
+	return render(c, views.LibraryPage(data))
 }
 
 func UpdateLibrary(c echo.Context) error {
