@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"go-steam/services"
+	"go-steam/util"
 	"go-steam/views"
 
 	"github.com/labstack/echo"
@@ -14,7 +15,7 @@ func GetLibraryFiltered(c echo.Context) error {
 
 	data := services.GetLibrary(title)
 	fmt.Printf("Returning #%d Games \n", len(data.Cards))
-	return render(c, views.LibraryCards(data))
+	return util.Render(c, views.LibraryCards(data))
 }
 
 func GetLibrary(c echo.Context) error {
@@ -22,7 +23,7 @@ func GetLibrary(c echo.Context) error {
 
 	data := services.GetLibrary("")
 	fmt.Printf("Returning #%d Games \n", len(data.Cards))
-	return render(c, views.LibraryPage(data))
+	return util.Render(c, views.LibraryPage(data))
 }
 
 func UpdateLibrary(c echo.Context) error {
@@ -34,5 +35,5 @@ func UpdateLibrary(c echo.Context) error {
 	services.UpdateLibrary(getOwnedGames)
 	data := services.GetLibrary("")
 	fmt.Printf("Returning #%d Games \n", len(data.Cards))
-	return render(c, views.LibraryCards(data))
+	return util.Render(c, views.LibraryCards(data))
 }

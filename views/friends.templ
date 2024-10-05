@@ -2,10 +2,64 @@ package views
 
 import (
     "go-steam/views/layout"
+    "go-steam/model"
     )
 
-templ FriendsPage() {
+templ FriendsPage(friends []model.Player) {
     @layout.Base(){    
         <h1>Steam Friends</h1>
+        <button 
+        hx-get="/updateFriends"
+        hx-trigger="click"
+        hx-target="#friend-cards"
+        hx-swap="outerHTML"
+        >
+        Update Library
+        </button>
+
+        @FriendyCards(friends)
     }
+}
+
+templ FriendCard(friend model.Player) {
+    <div id={ "friend-card-" + friend.Steamid }>
+        <div>
+            <img src={ friend.Avatarfull } alt="Whoops">
+            <li>{ friend.Personaname }</li>
+            
+            if friend.Personastate == 0 {
+                <li>Offline</li>
+            } else if friend.Personastate == 1 {
+                <li>Online</li>
+            } else if friend.Personastate == 2 {
+                <li>Busy</li>
+            } else if friend.Personastate == 3 {
+                <li>Away</li>
+            } else if friend.Personastate == 4 {
+                <li>Snooze</li>
+            } else if friend.Personastate == 5 {
+                <li>Looking to Trade</li>
+            } else if friend.Personastate == 6 {
+                <li>Looking to Play</li>
+            }
+
+            if friend.Communityvisibilitystate == 1{
+                <li>Private</li>
+            } else if friend.Communityvisibilitystate == 3 {
+                <li>Public</li>
+            }
+
+            <li>{ friend.FriendSince }</li>
+            <li>Last Logoff: { friend.Lastlogoff }</li>
+            <a href={ templ.URL(friend.Profileurl) }>Steam Profile </a>
+        </div>
+    </div>
+}
+
+templ FriendyCards(friends []model.Player) {
+    <div id="friend-cards">
+        for _, friend := range friends {
+        @FriendCard(friend)
+        }
+    </div>
 }

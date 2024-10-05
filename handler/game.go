@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"go-steam/services"
+	"go-steam/util"
 	"go-steam/views"
 	"net/http"
 
@@ -10,8 +11,8 @@ import (
 )
 
 func GetDetailsPage(c echo.Context) error {
-	param := getParam(c, "AppID")
-	id, err := stringToInt(param)
+	param := util.GetParam(c, "AppID")
+	id, err := util.StringToInt(param)
 	if err != nil {
 		c.Logger().Error(err)
 		return c.String(http.StatusBadRequest, err.Error())
@@ -24,12 +25,12 @@ func GetDetailsPage(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	return render(c, views.DetailPageBase(data))
+	return util.Render(c, views.DetailPageBase(data))
 }
 
 func UpdateAchievements(c echo.Context) error {
-	param := getParam(c, "AppID")
-	id, err := stringToInt(param)
+	param := util.GetParam(c, "AppID")
+	id, err := util.StringToInt(param)
 	if err != nil {
 		c.Logger().Error(err)
 		return c.String(http.StatusBadRequest, err.Error())
@@ -43,5 +44,5 @@ func UpdateAchievements(c echo.Context) error {
 		c.Logger().Error(err)
 		return c.String(http.StatusNotFound, "Unbale to get GetDetailsPage")
 	}
-	return render(c, views.AchievementTable(data.Achievements))
+	return util.Render(c, views.AchievementTable(data.Achievements))
 }

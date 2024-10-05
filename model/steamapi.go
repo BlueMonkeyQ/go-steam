@@ -88,3 +88,35 @@ type AchievementsApi struct {
 		} `json:"availableGameStats"`
 	} `json:"game"`
 }
+
+type FriendAPI struct {
+	Steamid      string `json:"steamid"`
+	Relationship string `json:"relationship"`
+	FriendSince  int    `json:"friend_since"`
+}
+
+type GetFriendListAPI struct {
+	Friendslist struct {
+		Friends []FriendAPI `json:"friends"`
+	} `json:"friendslist"`
+}
+
+type PlayerAPI struct {
+	Steamid                  string `json:"steamid"`
+	Communityvisibilitystate int    `json:"communityvisibilitystate"`
+	Profilestate             int    `json:"profilestate"`
+	Personaname              string `json:"personaname"`
+	Profileurl               string `json:"profileurl"`
+	Avatar                   string `json:"avatar"`
+	Avatarmedium             string `json:"avatarmedium"`
+	Avatarfull               string `json:"avatarfull"`
+	Avatarhash               string `json:"avatarhash"`
+	Lastlogoff               int    `json:"lastlogoff"`
+	Personastate             int    `json:"personastate"`
+}
+
+type GetPlayerSummariesAPI struct {
+	Response struct {
+		Players []PlayerAPI `json:"players"`
+	} `json:"response"`
+}

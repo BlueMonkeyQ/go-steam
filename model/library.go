@@ -52,3 +52,17 @@ type GameData struct {
 	AppDetails   AppDetails
 	Achievements AchivementDetails
 }
+
+type Player struct {
+	Steamid                  string
+	FriendSince              string
+	Communityvisibilitystate int
+	Profilestate             int
+	Personaname              string
+	Profileurl               string
+	Avatar                   string
+	Avatarmedium             string
+	Avatarfull               string
+	Lastlogoff               string
+	Personastate             int
+}

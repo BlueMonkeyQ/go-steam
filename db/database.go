@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"go-steam/model"
+	"go-steam/util"
 	"os"
 	"strconv"
 	"strings"
@@ -23,104 +24,141 @@ func InitDatabase() {
 			fmt.Println(msg)
 			panic(err)
 		}
+	}
 
-		db, err := CreateConnection()
-		if err != nil {
-			panic(err)
-		}
-		defer db.Close()
+	db, err := CreateConnection()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
-		var query string
+	var query string
 
-		fmt.Println("Creating Steam Users Games Table...")
-		query = `
-			CREATE TABLE IF NOT EXISTS steamusergames (
-		        id INTEGER PRIMARY KEY AUTOINCREMENT,
-				Appid INTEGER,
-		        PlaytimeForever INTEGER,
-		        PlaytimeWindowsForever INTEGER,
-		        PlaytimeMacForever INTEGER,
-		        PlaytimeLinuxForever INTEGER,
-		        PlaytimeDeckForever INTEGER,
-		        RtimeLastPlayed INTEGER,
-				Playtime2Weeks INTEGER,
-				LastUpdated TEXT,
-				UNIQUE(Appid)
-		    );
-			`
-		_, err = db.Exec(query)
-		if err != nil {
-			panic(err)
-		}
+	fmt.Println("Steam Users Games Table...")
+	query = `
+		CREATE TABLE IF NOT EXISTS steamusergames (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			Appid INTEGER,
+			PlaytimeForever INTEGER,
+			PlaytimeWindowsForever INTEGER,
+			PlaytimeMacForever INTEGER,
+			PlaytimeLinuxForever INTEGER,
+			PlaytimeDeckForever INTEGER,
+			RtimeLastPlayed INTEGER,
+			Playtime2Weeks INTEGER,
+			LastUpdated TEXT,
+			UNIQUE(Appid)
+		);
+		`
+	_, err = db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
 
-		fmt.Println("Creating Steam App Details Games Table...")
-		query = `
-			CREATE TABLE IF NOT EXISTS steamappdetails (
-		        id INTEGER PRIMARY KEY AUTOINCREMENT,
-				Appid INTEGER,
-		        Type TEXT,
-				Name TEXT,
-				SteamAppid INTEGER,
-		        RequiredAge,
-				IsFree INTEGER,
-				DetailedDescription TEXT,
-				AboutTheGame TEXT,
-				ShortDescription TEXT,
-				SupportedLanguages TEXT,
-				HeaderImage TEXT,
-				CapsuleImage TEXT,
-				CapsuleImagev5 TEXT,
-				Developers TEXT,
-				Publishers TEXT,
-				Windows INTEGER,
-				Mac INTEGER,
-				Linux INTEGER,
-				Categories TEXT,
-				Genres TEXT,
-				ReleaseDate TEXT,
-				Background TEXT,
-				UNIQUE(Appid, SteamAppid)
-		    );
-			`
-		_, err = db.Exec(query)
-		if err != nil {
-			panic(err)
-		}
+	fmt.Println("Steam App Details Games Table...")
+	query = `
+		CREATE TABLE IF NOT EXISTS steamappdetails (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			Appid INTEGER,
+			Type TEXT,
+			Name TEXT,
+			SteamAppid INTEGER,
+			RequiredAge,
+			IsFree INTEGER,
+			DetailedDescription TEXT,
+			AboutTheGame TEXT,
+			ShortDescription TEXT,
+			SupportedLanguages TEXT,
+			HeaderImage TEXT,
+			CapsuleImage TEXT,
+			CapsuleImagev5 TEXT,
+			Developers TEXT,
+			Publishers TEXT,
+			Windows INTEGER,
+			Mac INTEGER,
+			Linux INTEGER,
+			Categories TEXT,
+			Genres TEXT,
+			ReleaseDate TEXT,
+			Background TEXT,
+			UNIQUE(Appid, SteamAppid)
+		);
+		`
+	_, err = db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
 
-		fmt.Println("Creating Steam Achievements Table...")
-		query = `
-			CREATE TABLE IF NOT EXISTS steamachievements (
-		        id INTEGER PRIMARY KEY AUTOINCREMENT,
-		        Appid INTEGER,
-		        Name TEXT,
-				DisplayName TEXT,
-				Hidden INTEGER,
-				Description TEXT,
-				Icon TEXT,
-				IconGray TEXT,
-				UNIQUE(Appid, Name)
-		    );
-			`
-		_, err = db.Exec(query)
-		if err != nil {
-			panic(err)
-		}
+	fmt.Println("Steam Achievements Table...")
+	query = `
+		CREATE TABLE IF NOT EXISTS steamachievements (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			Appid INTEGER,
+			Name TEXT,
+			DisplayName TEXT,
+			Hidden INTEGER,
+			Description TEXT,
+			Icon TEXT,
+			IconGray TEXT,
+			UNIQUE(Appid, Name)
+		);
+		`
+	_, err = db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
 
-		fmt.Println("Creating Steam User Achievements Table...")
-		query = `
-			CREATE TABLE IF NOT EXISTS steamuserachievements (
-		        id INTEGER PRIMARY KEY AUTOINCREMENT,
-		        Appid INTEGER,
-		        Apiname TEXT,
-		        Achieved INTEGER,
-		        Unlocktime INTEGER,
-				UNIQUE(Appid, Apiname)
-		    );
-			`
-		_, err = db.Exec(query)
-		if err != nil {
-			panic(err)
-		}
+	fmt.Println("Steam User Achievements Table...")
+	query = `
+		CREATE TABLE IF NOT EXISTS steamuserachievements (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			Appid INTEGER,
+			Apiname TEXT,
+			Achieved INTEGER,
+			Unlocktime INTEGER,
+			UNIQUE(Appid, Apiname)
+		);
+		`
+	_, err = db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Steam Friends Table...")
+	query = `
+		CREATE TABLE IF NOT EXISTS steamfriends (
+			Userid,
+			Steamid,
+			Relationship,
+			FriendSince,
+			UNIQUE(Userid,Steamid)
+		);
+		`
+	_, err = db.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Steam Users Table...")
+	query = `
+		CREATE TABLE IF NOT EXISTS steamusers (
+			Steamid,
+			Communityvisibilitystate,
+			Profilestate,
+			Personaname,
+			Profileurl,
+			Avatar,
+			Avatarmedium,
+			Avatarfull,
+			Avatarhash,
+			Lastlogoff,
+			Personastate,
+			UNIQUE(Steamid)
+		);
+		`
+	_, err = db.Exec(query)
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -417,6 +455,67 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 	return gameData, nil
 }
 
+func GetFriendsDB(steamid int) ([]model.Player, error) {
+	fmt.Println("Database: GetFriends")
+	db, err := CreateConnection()
+	if err != nil {
+		return []model.Player{}, err
+	}
+	defer db.Close()
+
+	var query = `
+		SELECT 
+			sf.Steamid,
+			sf.FriendSince,
+			su.Communityvisibilitystate,
+			su.Profilestate,
+			su.Personaname,
+			su.Profileurl,
+			su.Avatar,
+			su.Avatarmedium,
+			su.Avatarfull,
+			su.Lastlogoff,
+			su.Personastate
+		FROM steamfriends as sf
+		JOIN steamusers as su ON su.Steamid = sf.Steamid
+		WHERE sf.Userid = ?
+	`
+
+	rows, err := db.Query(query, steamid)
+	if err != nil {
+		return []model.Player{}, err
+	}
+	defer rows.Close()
+
+	var players []model.Player
+
+	for rows.Next() {
+		var player model.Player
+		err = rows.Scan(
+			&player.Steamid,
+			&player.FriendSince,
+			&player.Communityvisibilitystate,
+			&player.Profilestate,
+			&player.Personaname,
+			&player.Profileurl,
+			&player.Avatar,
+			&player.Avatarmedium,
+			&player.Avatarfull,
+			&player.Lastlogoff,
+			&player.Personastate,
+		)
+		if err != nil {
+			return []model.Player{}, err
+		}
+
+		player.Lastlogoff = util.StringToTime(player.Lastlogoff)
+
+		players = append(players, player)
+	}
+
+	return players, nil
+}
+
 func InsertSteamUserGamesDB(data model.Games, lastUpdated string) error {
 	fmt.Println("Database: InsertSteamUserGamesDB")
 
@@ -648,6 +747,130 @@ func UpdateSteamUserGamesLastUpdated(id int, lastUpdated string) error {
 	`
 
 	_, err = db.Exec(query, lastUpdated, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertSteamFriendsDB(data []model.FriendAPI, userid int) error {
+	fmt.Println("Database: InsertSteamFriendsDB")
+
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO steamfriends (
+			Userid,
+			Steamid,
+			Relationship,
+			FriendSince
+		)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT(Userid, Steamid) DO UPDATE SET
+			Relationship=excluded.Relationship,
+			FriendSince=excluded.FriendSince
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, friend := range data {
+		friendSince := util.StringToTime(util.IntToString(friend.FriendSince))
+		_, err = stmt.Exec(
+			userid,
+			friend.Steamid,
+			friend.Relationship,
+			friendSince,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertSteamUsersDB(data []model.PlayerAPI) error {
+	fmt.Println("Database: InsertSteamUsersDB")
+
+	db, err := CreateConnection()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO steamusers (
+			Steamid,
+			Communityvisibilitystate,
+			Profilestate,
+			Personaname,
+			Profileurl,
+			Avatar,
+			Avatarmedium,
+			Avatarfull,
+			Avatarhash,
+			Lastlogoff,
+			Personastate
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(Steamid) DO UPDATE SET
+			Communityvisibilitystate=excluded.Communityvisibilitystate,
+			Profilestate=excluded.Profilestate,
+			Personaname=excluded.Personaname,
+			Profileurl=excluded.Profileurl,
+			Avatar=excluded.Avatar,
+			Avatarmedium=excluded.Avatarmedium,
+			Avatarfull=excluded.Avatarfull,
+			Avatarhash=excluded.Avatarhash,
+			Lastlogoff=excluded.Lastlogoff,
+			Personastate=excluded.Personastate
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, user := range data {
+		_, err = stmt.Exec(
+			user.Steamid,
+			user.Communityvisibilitystate,
+			user.Profilestate,
+			user.Personaname,
+			user.Profileurl,
+			user.Avatar,
+			user.Avatarmedium,
+			user.Avatarfull,
+			user.Avatarhash,
+			user.Lastlogoff,
+			user.Personastate,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
