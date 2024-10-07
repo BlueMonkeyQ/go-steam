@@ -112,10 +112,11 @@ func InitDatabase() {
 	query = `
 		CREATE TABLE IF NOT EXISTS steamuserachievements (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			Appid INTEGER,
-			Apiname TEXT,
-			Achieved INTEGER,
-			Unlocktime INTEGER,
+			Appid INTEGER NOT NULL,
+			Apiname TEXT NOT NULL,
+			Achieved INTEGER DEFAULT 0,
+			Unlocktime INTEGER DEFAULT 0,
+			Percentage REAL DEFAULT 0,
 			UNIQUE(Appid, Apiname)
 		);
 		`
@@ -363,6 +364,12 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 			sad.Genres,
 			sad.ReleaseDate,
 			sad.Background,
+			IFNULL (sug.PlaytimeForever, 0) AS PlaytimeForever,
+			IFNULL (sug.PlaytimeWindowsForever, 0) AS PlaytimeWindowsForever,
+			IFNULL (sug.PlaytimeMacForever, 0) AS PlaytimeMacForever,
+			IFNULL (sug.PlaytimeLinuxForever, 0) AS PlaytimeLinuxForever,
+			IFNULL (sug.RtimeLastPlayed, 0) AS RtimeLastPlayed,
+			IFNULL (sug.Playtime2Weeks, 0) AS Playtime2Weeks,
 			IFNULL(sug.LastUpdated, "") AS LastUpdated
 		FROM steamappdetails as sad
 		JOIN steamusergames as sug ON sug.Appid = sad.Appid
@@ -391,6 +398,12 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 		&genres,
 		&gameData.AppDetails.ReleaseDate,
 		&gameData.AppDetails.Background,
+		&gameData.AppDetails.PlaytimeForever,
+		&gameData.AppDetails.PlaytimeWindowsForever,
+		&gameData.AppDetails.PlaytimeMacForever,
+		&gameData.AppDetails.PlaytimeLinuxForever,
+		&gameData.AppDetails.RtimeLastPlayed,
+		&gameData.AppDetails.Playtime2Weeks,
 		&gameData.Achievements.LastUpdated,
 	)
 	if err != nil {
@@ -404,6 +417,14 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 	gameData.AppDetails.Categories = strings.Split(categories, ",")
 	gameData.AppDetails.Genres = strings.Split(genres, ",")
 
+	gameData.AppDetails.PlaytimeForever = (int(gameData.AppDetails.PlaytimeForever / 60))
+	gameData.AppDetails.PlaytimeWindowsForever = (int(gameData.AppDetails.PlaytimeWindowsForever / 60))
+	gameData.AppDetails.PlaytimeMacForever = (int(gameData.AppDetails.PlaytimeMacForever / 60))
+	gameData.AppDetails.Playtime2Weeks = (int(gameData.AppDetails.Playtime2Weeks / 60))
+	gameData.AppDetails.PlaytimeLinuxForever = (int(gameData.AppDetails.PlaytimeLinuxForever / 60))
+
+	gameData.AppDetails.RtimeLastPlayed = util.StringToTime(gameData.AppDetails.RtimeLastPlayed)
+
 	query = `
 	SELECT
 		sa.Name,
@@ -413,7 +434,8 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 		sa.Icon,
 		sa.IconGray,
 		sua.Achieved,
-		sua.Unlocktime
+		sua.Unlocktime,
+		sua.Percentage
 	FROM steamachievements as sa
 	JOIN steamuserachievements as sua ON sua.Apiname = sa.Name
 	WHERE sa.Appid = ?
@@ -435,6 +457,7 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 			&achievement.IconGray,
 			&achievement.Achieved,
 			&achievement.Unlocktime,
+			&achievement.Percentage,
 		)
 		if err != nil {
 			return model.GameData{}, err
@@ -518,6 +541,7 @@ func GetFriendsDB(steamid int) ([]model.Player, error) {
 
 func InsertSteamUserGamesDB(data model.Games, lastUpdated string) error {
 	fmt.Println("Database: InsertSteamUserGamesDB")
+	fmt.Println(data, lastUpdated)
 
 	db, err := CreateConnection()
 	if err != nil {
@@ -537,7 +561,7 @@ func InsertSteamUserGamesDB(data model.Games, lastUpdated string) error {
 	Playtime2Weeks,
 	LastUpdated
 	)
-	VALUES (?,?,?,?,?,?,?,?);
+	VALUES (?,?,?,?,?,?,?,?,?);
 	`
 	_, err = db.Exec(query,
 		data.Appid,
@@ -634,11 +658,13 @@ func InsertSteamUserAchievementsDB(data model.UserAchievements, id int) error {
 			Appid,
 			Apiname,
 			Achieved,
-			Unlocktime
-		) VALUES (?, ?, ?, ?)
+			Unlocktime,
+			Percentage
+		) VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT(Appid, Apiname) DO UPDATE SET
 			Achieved=excluded.Achieved,
-			Unlocktime=excluded.Unlocktime
+			Unlocktime=excluded.Unlocktime,
+			Percentage=excluded.Percentage
 	`)
 	if err != nil {
 		return err
@@ -651,6 +677,7 @@ func InsertSteamUserAchievementsDB(data model.UserAchievements, id int) error {
 			achievement.Apiname,
 			achievement.Achieved,
 			achievement.Unlocktime,
+			achievement.Percentage,
 		)
 		if err != nil {
 			tx.Rollback()

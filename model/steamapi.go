@@ -69,9 +69,19 @@ type UserAchievements struct {
 			Apiname    string `json:"apiname"`
 			Achieved   int    `json:"achieved"`
 			Unlocktime int    `json:"unlocktime"`
+			Percentage float64
 		} `json:"achievements"`
 		Success bool `json:"success"`
 	} `json:"playerstats"`
+}
+
+type GlobalAchievementsAPI struct {
+	Achievementpercentages struct {
+		Achievements []struct {
+			Name    string  `json:"name"`
+			Percent float64 `json:"percent"`
+		} `json:"achievements"`
+	} `json:"achievementpercentages"`
 }
 
 type AchievementsApi struct {

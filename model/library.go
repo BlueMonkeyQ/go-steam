@@ -22,25 +22,32 @@ type Achievement struct {
 	IconGray    string
 	Achieved    bool
 	Unlocktime  string
+	Percentage  string
 }
 
 type AppDetails struct {
-	AppID              string
-	SteamAppID         string
-	Name               string
-	AboutTheGame       string
-	ShortDescripton    string
-	SupportedLanguages string
-	HeaderImage        string
-	Developers         []string
-	Publishers         []string
-	Windows            bool
-	Mac                bool
-	Linux              bool
-	Categories         []string
-	Genres             []string
-	ReleaseDate        string
-	Background         string
+	AppID                  string
+	SteamAppID             string
+	Name                   string
+	AboutTheGame           string
+	ShortDescripton        string
+	SupportedLanguages     string
+	HeaderImage            string
+	Developers             []string
+	Publishers             []string
+	Windows                bool
+	Mac                    bool
+	Linux                  bool
+	Categories             []string
+	Genres                 []string
+	ReleaseDate            string
+	Background             string
+	PlaytimeForever        int
+	PlaytimeWindowsForever int
+	PlaytimeMacForever     int
+	PlaytimeLinuxForever   int
+	RtimeLastPlayed        string
+	Playtime2Weeks         int
 }
 
 type AchivementDetails struct {

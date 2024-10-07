@@ -47,6 +47,7 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 
 		} else {
 			fmt.Printf("Info: %d Already Exist\n", game.Appid)
+			continue
 		}
 
 		// Steam App Details
@@ -266,6 +267,28 @@ func GetSteamUserAchievements(id int) (model.UserAchievements, error) {
 	var achievements model.UserAchievements
 	if err := json.Unmarshal(body, &achievements); err != nil {
 		return model.UserAchievements{}, err
+	}
+	return achievements, nil
+
+}
+
+func GetSteamGlobalAchievements(id int) (model.GlobalAchievementsAPI, error) {
+	fmt.Println("Endpoint: GetSteamUserAchievements")
+	url := fmt.Sprintf("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=%d&format=json", id)
+	resp, err := http.Get(url)
+	if err != nil {
+		return model.GlobalAchievementsAPI{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return model.GlobalAchievementsAPI{}, err
+	}
+
+	var achievements model.GlobalAchievementsAPI
+	if err := json.Unmarshal(body, &achievements); err != nil {
+		return model.GlobalAchievementsAPI{}, err
 	}
 	return achievements, nil
 

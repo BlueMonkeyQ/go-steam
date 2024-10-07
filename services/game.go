@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-steam/db"
 	"go-steam/model"
+	"math"
 	"strings"
 	"time"
 )
@@ -27,6 +28,24 @@ func UpdateAchievements(id int) {
 	if err != nil {
 		if !strings.Contains(err.Error(), "False") {
 			fmt.Printf("Fail: %s \n", err.Error())
+		}
+	}
+	globalAchievements, err := GetSteamGlobalAchievements(id)
+	if err != nil {
+		if !strings.Contains(err.Error(), "False") {
+			fmt.Printf("Fail: %s \n", err.Error())
+		}
+	}
+
+	for i := range userAchievements.Playerstats.Achievements {
+		name := userAchievements.Playerstats.Achievements[i].Apiname
+
+		for _, global := range globalAchievements.Achievementpercentages.Achievements {
+			if name == global.Name {
+				percent := math.Floor(global.Percent*100) / 100
+				userAchievements.Playerstats.Achievements[i].Percentage = percent
+				continue
+			}
 		}
 	}
 

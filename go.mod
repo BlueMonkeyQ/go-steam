@@ -4,7 +4,6 @@ go 1.23.0
 
 require (
 	github.com/a-h/templ v0.2.778
-	github.com/guregu/null v4.0.0+incompatible
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/mattn/go-sqlite3 v1.14.23
 )
