@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"go-steam/model"
 	"go-steam/services"
 	"go-steam/util"
 	"go-steam/views"
@@ -37,7 +38,10 @@ func UpdateAchievements(c echo.Context) error {
 	}
 	fmt.Printf("Endpoint: UpdateAchievements: %d \n", id)
 
-	services.UpdateAchievements(id)
+	if err := services.UpdateAchievements(id); err != nil {
+		c.Logger().Error(err)
+		return util.Render(c, views.AchievementTable(model.AchivementDetails{}))
+	}
 
 	data, err := services.GetDetailsPage(id)
 	if err != nil {

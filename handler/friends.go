@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"go-steam/model"
 	"go-steam/services"
 	"go-steam/util"
 	"go-steam/views"
@@ -10,18 +11,26 @@ import (
 )
 
 func GetFriends(c echo.Context) error {
-	fmt.Println("Endpoint: GetFriends")
-	data := services.GetFriends()
+	data, err := services.GetFriends()
+	if err != nil {
+		c.Logger().Error(err)
+		return util.Render(c, views.FriendsPage([]model.Player{}))
+	}
+
 	fmt.Printf("Returning #%d Friends \n", len(data))
 	return util.Render(c, views.FriendsPage(data))
 }
 
 func UpdateFriends(c echo.Context) error {
-	fmt.Println("Endpoint: UpdateFriends")
 	if err := services.UpdateFriends(); err != nil {
 		fmt.Printf("Fail: %s", err.Error())
 	}
-	data := services.GetFriends()
+	data, err := services.GetFriends()
+	if err != nil {
+		c.Logger().Error(err)
+		return util.Render(c, views.FriendyCards([]model.Player{}))
+	}
+
 	fmt.Printf("Returning #%d Friends \n", len(data))
 	return util.Render(c, views.FriendyCards(data))
 }

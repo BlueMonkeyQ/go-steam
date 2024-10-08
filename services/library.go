@@ -6,22 +6,33 @@ import (
 	"fmt"
 	"go-steam/db"
 	"go-steam/model"
+	"go-steam/util"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func GetLibrary(filter string) model.Library {
+func GetLibrary(filter string) (model.Library, error) {
+	fmt.Println("Endpoint: GetLibrary")
+	if err := ValidateSettings(); err != nil {
+		return model.Library{}, err
+	}
+
 	data, err := db.GetLibraryDB(filter)
 	if err != nil {
-		fmt.Println(err)
-		return model.Library{}
+		return model.Library{}, err
 	}
-	return data
+	return data, nil
 }
 
-func UpdateLibrary(data model.GetOwnedGamesAPI) {
+func UpdateLibrary(data model.GetOwnedGamesAPI) error {
+	fmt.Println("Endpoint: UpdateLibrary")
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	timestamp := time.Now().Local().Format(time.RFC850)
 	for i, game := range data.Response.Games {
 		fmt.Printf("#%d AppID: %d \n", i, game.Appid)
@@ -29,8 +40,7 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 		// Steam User Game
 		exist, err := db.GetSteamUserGamesDB(game.Appid)
 		if err != nil {
-			fmt.Printf("Fail: %s \n", err.Error())
-			break
+			return err
 		}
 		if !exist {
 			err := db.InsertSteamUserGamesDB(game, timestamp)
@@ -38,8 +48,7 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 				if strings.Contains(err.Error(), "UNIQUE") {
 					fmt.Println("Warning: Already Exist")
 				} else {
-					fmt.Printf("Fail: %s", err.Error())
-					break
+					return err
 				}
 			} else {
 				fmt.Println("Pass: Inserted")
@@ -53,16 +62,14 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 		// Steam App Details
 		exist, err = db.GetSteamAppDetailsAppidDB(game.Appid)
 		if err != nil {
-			fmt.Printf("Fail: %s \n", err.Error())
-			break
+			return err
 		}
 
 		if !exist {
 			appDetails, err := GetSteamAppDetail(game.Appid)
 			if err != nil {
 				if !strings.Contains(err.Error(), "False") {
-					fmt.Printf("Fail: %s \n", err.Error())
-					break
+					return err
 				}
 			}
 
@@ -71,8 +78,7 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 				if strings.Contains(err.Error(), "UNIQUE") {
 					fmt.Println("Warning: Already Exist")
 				} else {
-					fmt.Printf("Fail: %s", err.Error())
-					break
+					return err
 				}
 				continue
 			} else {
@@ -85,16 +91,14 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 		// Steam Achievements
 		exist, err = db.GetSteamAchievementsAppidDB(game.Appid)
 		if err != nil {
-			fmt.Printf("Fail: %s \n", err.Error())
-			break
+			return err
 		}
 
 		if !exist {
 			achievements, err := GetSteamAchievements(game.Appid)
 			if err != nil {
 				if !strings.Contains(err.Error(), "False") {
-					fmt.Printf("Fail: %s \n", err.Error())
-					break
+					return err
 				}
 			}
 
@@ -103,8 +107,7 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 				if strings.Contains(err.Error(), "UNIQUE") {
 					fmt.Println("Warning: Already Exist")
 				} else {
-					fmt.Printf("Fail: %s", err.Error())
-					break
+					return err
 				}
 				continue
 			} else {
@@ -117,20 +120,18 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 		// Steam User Achievements
 		exist, err = db.ExistSteamUserAchievementsAppidDB(game.Appid)
 		if err != nil {
-			fmt.Printf("Fail: %s \n", err.Error())
-			break
+			return err
 		}
 
 		if !exist {
 			err = db.UpdateSteamUserGamesLastUpdated(game.Appid, timestamp)
 			if err != nil {
-				fmt.Printf("Fail: %s \n", err.Error())
+				return err
 			}
 			userAchievements, err := GetSteamUserAchievements(game.Appid)
 			if err != nil {
 				if !strings.Contains(err.Error(), "False") {
-					fmt.Printf("Fail: %s \n", err.Error())
-					break
+					return err
 				}
 			}
 
@@ -139,8 +140,7 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 				if strings.Contains(err.Error(), "UNIQUE") {
 					fmt.Println("Warning: Already Exist")
 				} else {
-					fmt.Printf("Fail: %s", err.Error())
-					break
+					return err
 				}
 				continue
 			} else {
@@ -150,11 +150,20 @@ func UpdateLibrary(data model.GetOwnedGamesAPI) {
 			fmt.Printf("Info: %d Already Exist\n", game.Appid)
 		}
 	}
+	return nil
 }
 
 func GetSteamUserGames() (model.GetOwnedGamesAPI, error) {
 	fmt.Println("Endpoint: GetOwnedGames")
-	resp, err := http.Get("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=14EB214CEC3F1701FD192885D330990F&steamid=76561198050437739&format=json")
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return model.GetOwnedGamesAPI{}, err
+	}
+
+	steamkey := util.GetSteamKey()
+	steamid := util.GetSteamId()
+	url := fmt.Sprintf("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=%s&steamid=%s&format=json", steamkey, steamid)
+	resp, err := http.Get(url)
 	if err != nil {
 		return model.GetOwnedGamesAPI{}, err
 	}
@@ -174,6 +183,11 @@ func GetSteamUserGames() (model.GetOwnedGamesAPI, error) {
 
 func GetSteamAppDetail(id int) (model.AppDetailsAPI, error) {
 	fmt.Println("Endpoint: AppDetails")
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return model.AppDetailsAPI{}, err
+	}
+
 	url := fmt.Sprintf("http://store.steampowered.com/api/appdetails?appids=%d", id)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -230,7 +244,13 @@ func GetSteamAppDetail(id int) (model.AppDetailsAPI, error) {
 
 func GetSteamAchievements(id int) (model.AchievementsApi, error) {
 	fmt.Println("Endpoint: GetSteamAchievements")
-	url := fmt.Sprintf("http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v0002/?key=14EB214CEC3F1701FD192885D330990F&appid=%d&l=english&format=json", id)
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return model.AchievementsApi{}, err
+	}
+
+	steamkey := util.GetSteamKey()
+	url := fmt.Sprintf("http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v0002/?key=%s&appid=%d&l=english&format=json", steamkey, id)
 	resp, err := http.Get(url)
 	if err != nil {
 		return model.AchievementsApi{}, err
@@ -252,7 +272,14 @@ func GetSteamAchievements(id int) (model.AchievementsApi, error) {
 
 func GetSteamUserAchievements(id int) (model.UserAchievements, error) {
 	fmt.Println("Endpoint: GetSteamUserAchievements")
-	url := fmt.Sprintf("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=%d&key=14EB214CEC3F1701FD192885D330990F&steamid=76561198050437739", id)
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return model.UserAchievements{}, err
+	}
+
+	steamkey := util.GetSteamKey()
+	steamid := util.GetSteamId()
+	url := fmt.Sprintf("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=%d&key=%s&steamid=%s", id, steamkey, steamid)
 	resp, err := http.Get(url)
 	if err != nil {
 		return model.UserAchievements{}, err
@@ -274,6 +301,11 @@ func GetSteamUserAchievements(id int) (model.UserAchievements, error) {
 
 func GetSteamGlobalAchievements(id int) (model.GlobalAchievementsAPI, error) {
 	fmt.Println("Endpoint: GetSteamUserAchievements")
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return model.GlobalAchievementsAPI{}, err
+	}
+
 	url := fmt.Sprintf("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=%d&format=json", id)
 	resp, err := http.Get(url)
 	if err != nil {

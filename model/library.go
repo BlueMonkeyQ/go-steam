@@ -1,5 +1,11 @@
 package model
 
+type Settings struct {
+	Steamkey string
+	Steamid  string
+	Valid    string
+}
+
 type LibraryCard struct {
 	AppID            string
 	Name             string

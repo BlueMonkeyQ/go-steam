@@ -1,0 +1,51 @@
+package views
+
+import (
+    "go-steam/views/layout"
+    "go-steam/model"
+    )
+
+templ SettingsPage(data model.Settings) {
+    @layout.Base(){
+        @SettingsInfo(data)
+
+        <div>
+            <p>
+                <a href="https://steamcommunity.com/">To get your Steamid. Log into steam and go to your profile. Your ID will be in the URL in the format 76561198######### </a>
+            </p>
+            <p>
+                <a href="https://steamcommunity.com/login/home/?goto=%2Fdev%2Fapikey">To get your Steamkey. Fillout this form </a>
+            </p>
+            
+        </div>
+    }
+}
+templ SettingsInfo(data model.Settings) {
+    <div id="settings-info">
+        <p>Current SteamKey: { data.Steamkey } </p>
+        <p>Current SteamId: { data.Steamid } </p>
+        <p>Valid: { data.Valid } </p>
+
+        <input 
+        type="text"
+        name="steamkey"
+        placeholder="Enter SteamKey"
+        hx-get="/settings"
+        hx-vals="{'steamkey': this.value}"
+        hx-trigger="keyup[keyCode==13]"
+        hx-target="#settings-info"
+        hx-swap="outerHTML"
+        >
+
+        <input 
+        type="text"
+        name="steamid"
+        placeholder="Enter SteamId"
+        hx-get="/settings"
+        hx-vals="{'steamid': this.value}"
+        hx-trigger="keyup[keyCode==13]"
+        hx-target="#settings-info"
+        hx-swap="innerHTML"
+        >
+    </div>
+}

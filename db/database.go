@@ -38,6 +38,7 @@ func InitDatabase() {
 	query = `
 		CREATE TABLE IF NOT EXISTS steamusergames (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			SteamId INTEGER,
 			Appid INTEGER,
 			PlaytimeForever INTEGER,
 			PlaytimeWindowsForever INTEGER,
@@ -47,7 +48,7 @@ func InitDatabase() {
 			RtimeLastPlayed INTEGER,
 			Playtime2Weeks INTEGER,
 			LastUpdated TEXT,
-			UNIQUE(Appid)
+			UNIQUE(SteamId, Appid)
 		);
 		`
 	_, err = db.Exec(query)

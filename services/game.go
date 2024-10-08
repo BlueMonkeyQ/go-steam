@@ -10,6 +10,12 @@ import (
 )
 
 func GetDetailsPage(id int) (model.GameData, error) {
+	fmt.Println("Endpoint: GetDetailsPage")
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return model.GameData{}, err
+	}
+
 	data, err := db.GetGameDetailsDB(id)
 	if err != nil {
 		return model.GameData{}, err
@@ -17,23 +23,29 @@ func GetDetailsPage(id int) (model.GameData, error) {
 	return data, nil
 }
 
-func UpdateAchievements(id int) {
+func UpdateAchievements(id int) error {
+	fmt.Println("Endpoint: UpdateAchievements")
+	if err := ValidateSettings(); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	timestamp := time.Now().Local().Format(time.RFC850)
 	err := db.UpdateSteamUserGamesLastUpdated(id, timestamp)
 	if err != nil {
-		fmt.Printf("Fail: %s \n", err.Error())
+		return err
 	}
 
 	userAchievements, err := GetSteamUserAchievements(id)
 	if err != nil {
 		if !strings.Contains(err.Error(), "False") {
-			fmt.Printf("Fail: %s \n", err.Error())
+			return err
 		}
 	}
 	globalAchievements, err := GetSteamGlobalAchievements(id)
 	if err != nil {
 		if !strings.Contains(err.Error(), "False") {
-			fmt.Printf("Fail: %s \n", err.Error())
+			return err
 		}
 	}
 
@@ -54,9 +66,10 @@ func UpdateAchievements(id int) {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			fmt.Println("Warning: Already Exist")
 		} else {
-			fmt.Printf("Fail: %s", err.Error())
+			return err
 		}
 	} else {
 		fmt.Println("Pass: Inserted")
 	}
+	return nil
 }

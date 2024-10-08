@@ -34,7 +34,7 @@ templ AppDetails(data model.AppDetails) {
         <h2>Released { data.ReleaseDate }</h2>
 
         <p>Playtime { util.IntToString(data.PlaytimeForever) }hrs</p>
-        <p>Last Time layed { data.RtimeLastPlayed }</p>
+        <p>Last Time Played { data.RtimeLastPlayed }</p>
         <p>Past 2 Weeks Played { util.IntToString(data.Playtime2Weeks) }hrs</p>
 
         <a href={ templ.URL("https://store.steampowered.com/app/" + data.AppID) }>Steam Page</a>
