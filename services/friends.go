@@ -17,7 +17,8 @@ func GetFriends() ([]model.Player, error) {
 		return []model.Player{}, err
 	}
 
-	data, err := db.GetFriendsDB(76561198050437739)
+	steamid := util.GetSteamId()
+	data, err := db.GetFriendsDB(steamid)
 	if err != nil {
 		return []model.Player{}, err
 	}
@@ -63,7 +64,10 @@ func UpdateFriends() error {
 		return err
 	}
 
-	resp, err := http.Get("https://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=14EB214CEC3F1701FD192885D330990F&steamid=76561198050437739&relationship=friend")
+	steamkey := util.GetSteamKey()
+	steamid := util.GetSteamId()
+	url := fmt.Sprintf("https://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=%s&steamid=%s&relationship=friend", steamkey, steamid)
+	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -92,7 +96,7 @@ func UpdateFriends() error {
 		return err
 	}
 
-	if err := db.InsertSteamFriendsDB(gfla.Friendslist.Friends, 76561198050437739); err != nil {
+	if err := db.InsertSteamFriendsDB(gfla.Friendslist.Friends, steamid); err != nil {
 		fmt.Println(err)
 		return err
 	}

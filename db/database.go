@@ -479,7 +479,7 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 	return gameData, nil
 }
 
-func GetFriendsDB(steamid int) ([]model.Player, error) {
+func GetFriendsDB(steamid string) ([]model.Player, error) {
 	fmt.Println("Database: GetFriends")
 	db, err := CreateConnection()
 	if err != nil {
@@ -542,7 +542,6 @@ func GetFriendsDB(steamid int) ([]model.Player, error) {
 
 func InsertSteamUserGamesDB(data model.Games, lastUpdated string) error {
 	fmt.Println("Database: InsertSteamUserGamesDB")
-	fmt.Println(data, lastUpdated)
 
 	db, err := CreateConnection()
 	if err != nil {
@@ -695,7 +694,6 @@ func InsertSteamUserAchievementsDB(data model.UserAchievements, id int) error {
 
 func InsertSteamAppDetailsDB(data model.AppDetailsAPI, id int) error {
 	fmt.Println("Database: InsertSteamAppDetailsDB")
-	fmt.Println(data.SteamAppid)
 
 	db, err := CreateConnection()
 	if err != nil {
@@ -781,7 +779,7 @@ func UpdateSteamUserGamesLastUpdated(id int, lastUpdated string) error {
 	return nil
 }
 
-func InsertSteamFriendsDB(data []model.FriendAPI, userid int) error {
+func InsertSteamFriendsDB(data []model.FriendAPI, userid string) error {
 	fmt.Println("Database: InsertSteamFriendsDB")
 
 	db, err := CreateConnection()
