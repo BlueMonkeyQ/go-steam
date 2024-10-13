@@ -26,6 +26,7 @@ templ LibraryPage(library model.Library) {
         hx-target="#library-cards"
         hx-swap="outerHTML"
         >
+        @FilterOptions(library.FilterOptions)
         @LibraryCards(library)
     }
 }
@@ -48,5 +49,27 @@ templ LibraryCards(library model.Library) {
         for _, card := range library.Cards {
         @LibraryCard(card)
         }
+    </div>
+}
+
+templ FilterOptions(filter model.FilterOptions) {
+    <div>
+        <button
+            hx-trigger="click"
+            hx-target="#genres-list"
+            hx-swap="outerHTML"
+        >
+            Filter by Genre
+        </button>
+
+        <form hx-boost="true" action="/getLibraryFilterGenres" method="GET">
+            for _, genre := range filter.Genres {
+                <div>
+                    <input type="checkbox" name="genre" value={ genre }>
+                    <label>{ genre }</label>
+                </div>
+            }
+            <button type="submit">Update Filter</button>
+        </form>
     </div>
 }

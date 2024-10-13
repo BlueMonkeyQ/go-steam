@@ -6,6 +6,7 @@ require (
 	github.com/a-h/templ v0.2.778
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/mattn/go-sqlite3 v1.14.23
+	gopkg.in/ini.v1 v1.67.0
 )
 
 require (
@@ -18,5 +19,4 @@ require (
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
-	gopkg.in/ini.v1 v1.67.0 // indirect
 )

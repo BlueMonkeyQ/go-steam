@@ -20,8 +20,19 @@ func GetLibraryFiltered(c echo.Context) error {
 		return util.Render(c, views.LibraryCards(model.Library{}))
 	}
 
-	fmt.Printf("Returning #%d Games \n", len(data.Cards))
+	filterOptions, err := services.GetFilterOptions()
+	if err != nil {
+		c.Logger().Error(err)
+		return util.Render(c, views.LibraryCards(model.Library{}))
+	}
+	data.FilterOptions = filterOptions
+
 	return util.Render(c, views.LibraryCards(data))
+}
+
+func GetLibraryFilterGenres(c echo.Context) error {
+	fmt.Println("HELLO :)")
+	return nil
 }
 
 func GetLibrary(c echo.Context) error {
@@ -30,7 +41,14 @@ func GetLibrary(c echo.Context) error {
 		c.Logger().Error(err)
 		return util.Render(c, views.LibraryPage(model.Library{}))
 	}
-	fmt.Printf("Returning #%d Games \n", len(data.Cards))
+
+	filterOptions, err := services.GetFilterOptions()
+	if err != nil {
+		c.Logger().Error(err)
+		return util.Render(c, views.LibraryPage(model.Library{}))
+	}
+	data.FilterOptions = filterOptions
+
 	return util.Render(c, views.LibraryPage(data))
 }
 
@@ -47,6 +65,5 @@ func UpdateLibrary(c echo.Context) error {
 		return util.Render(c, views.LibraryCards(model.Library{}))
 	}
 
-	fmt.Printf("Returning #%d Games \n", len(data.Cards))
 	return util.Render(c, views.LibraryCards(data))
 }

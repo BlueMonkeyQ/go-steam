@@ -19,9 +19,21 @@ func GetLibrary(filter string) (model.Library, error) {
 		return model.Library{}, err
 	}
 
+	db.GetFilterOption()
+
 	data, err := db.GetLibraryDB(filter)
 	if err != nil {
 		return model.Library{}, err
+	}
+	return data, nil
+}
+
+func GetFilterOptions() (model.FilterOptions, error) {
+	fmt.Println("Endpoint: GetFilterOptions")
+
+	data, err := db.GetFilterOption()
+	if err != nil {
+		return model.FilterOptions{}, err
 	}
 	return data, nil
 }

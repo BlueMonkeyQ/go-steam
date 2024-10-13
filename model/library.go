@@ -16,7 +16,8 @@ type LibraryCard struct {
 }
 
 type Library struct {
-	Cards []LibraryCard
+	Cards         []LibraryCard
+	FilterOptions FilterOptions
 }
 
 type Achievement struct {
@@ -78,4 +79,11 @@ type Player struct {
 	Avatarfull               string
 	Lastlogoff               string
 	Personastate             int
+}
+
+type FilterOptions struct {
+	Categories []string
+	Genres     []string
+	Developers []string
+	Publishers []string
 }

@@ -15,6 +15,7 @@ func main() {
 	e := echo.New()
 	e.GET("/", handler.GetLibrary)
 	e.GET("/getLibraryFilter", handler.GetLibraryFiltered)
+	e.GET("/getLibraryFilter", handler.GetLibraryFilterGenres)
 	e.GET("/updateLibrary", handler.UpdateLibrary)
 	e.GET("/getSteamUserLibrary/:AppID", handler.GetDetailsPage)
 	e.GET("/updateAchivements/:AppID", handler.UpdateAchievements)

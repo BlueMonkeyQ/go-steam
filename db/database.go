@@ -263,6 +263,98 @@ func GetSteamUserGamesDB(id int) (bool, error) {
 	return exists, nil
 }
 
+func GetFilterOption() (model.FilterOptions, error) {
+	fmt.Println("Database: GetFilterOption")
+	db, err := CreateConnection()
+	if err != nil {
+		return model.FilterOptions{}, err
+	}
+	defer db.Close()
+
+	var query = `
+	SELECT
+	Categories,
+	Genres,
+	Developers,
+	Publishers
+	FROM steamappdetails
+	`
+	rows, err := db.Query(query)
+	if err != nil {
+		return model.FilterOptions{}, err
+	}
+
+	var categoriesList []string
+	var categoriesDict = make(map[string]string)
+
+	var genresList []string
+	var genresDict = make(map[string]struct{})
+
+	var developersList []string
+	var developersDict = make(map[string]string)
+
+	var publishersList []string
+	var publishersDict = make(map[string]string)
+
+	for rows.Next() {
+		var filter struct {
+			Categories string
+			Genres     string
+			Developers string
+			Publishers string
+		}
+		err = rows.Scan(
+			&filter.Categories,
+			&filter.Genres,
+			&filter.Developers,
+			&filter.Publishers,
+		)
+		if err != nil {
+			return model.FilterOptions{}, err
+		}
+
+		var categories = strings.Split(filter.Categories, ",")
+		var genres = strings.Split(filter.Genres, ",")
+		var developers = strings.Split(filter.Developers, ",")
+		var publishers = strings.Split(filter.Publishers, ",")
+
+		for _, value := range categories {
+			if _, ok := categoriesDict[value]; !ok {
+				categoriesDict[value] = ""
+				categoriesList = append(categoriesList, value)
+			}
+		}
+
+		for _, value := range genres {
+			if _, ok := genresDict[value]; !ok {
+				genresDict[value] = struct{}{}
+				genresList = append(genresList, value)
+			}
+		}
+
+		for _, value := range developers {
+			if _, ok := developersDict[value]; !ok {
+				developersDict[value] = ""
+				developersList = append(developersList, value)
+			}
+		}
+		for _, value := range publishers {
+			if _, ok := publishersDict[value]; !ok {
+				publishersDict[value] = ""
+				publishersList = append(publishersList, value)
+			}
+		}
+
+	}
+
+	var fo model.FilterOptions
+	fo.Categories = categoriesList
+	fo.Genres = genresList
+	fo.Publishers = publishersList
+	fo.Developers = developersList
+	return fo, nil
+}
+
 func GetLibraryDB(filter string) (model.Library, error) {
 	fmt.Println("Database: GetLibraryDB")
 	db, err := CreateConnection()
@@ -276,7 +368,7 @@ func GetLibraryDB(filter string) (model.Library, error) {
 		query = `
 		SELECT 
 		sad.Appid, 
-		sad.Name, 
+		sad.Name,
 		IFNULL(sad.HeaderImage, '') AS HeaderImage,
 		sug.RtimeLastPlayed,
 		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
@@ -325,15 +417,7 @@ func GetLibraryDB(filter string) (model.Library, error) {
 			return model.Library{}, err
 		}
 
-		unlockTimeInt, err := strconv.ParseInt(card.RtimeLastPlayed, 10, 64)
-		if err != nil {
-			unlockTimeInt = 0
-		}
-
-		if unlockTimeInt != 0 {
-			card.RtimeLastPlayed = time.Unix(unlockTimeInt, 0).Format(time.RFC1123)
-		}
-
+		card.RtimeLastPlayed = util.StringToTime(card.RtimeLastPlayed)
 		library.Cards = append(library.Cards, card)
 	}
 	return library, nil
