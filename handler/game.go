@@ -26,6 +26,7 @@ func GetDetailsPage(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
+	data.AchivementDetails.AppID = util.IntToString(id)
 	return util.Render(c, views.DetailPageBase(data))
 }
 
@@ -40,7 +41,7 @@ func UpdateAchievements(c echo.Context) error {
 
 	if err := services.UpdateAchievements(id); err != nil {
 		c.Logger().Error(err)
-		return util.Render(c, views.AchievementTable(model.AchivementDetails{}))
+		return util.Render(c, views.AchievementTable([]model.Achievement{}))
 	}
 
 	data, err := services.GetDetailsPage(id)
@@ -48,5 +49,13 @@ func UpdateAchievements(c echo.Context) error {
 		c.Logger().Error(err)
 		return c.String(http.StatusNotFound, "Unbale to get GetDetailsPage")
 	}
-	return util.Render(c, views.AchievementTable(data.Achievements))
+	return util.Render(c, views.AchievementTable(data.AchivementDetails.Achievements))
 }
+
+// func FilterAchievements(c echo.Context) error {
+// 	param := util.GetParam(c, "filter")
+// 	switch param {
+// 	case "All":
+
+// 	}
+// }

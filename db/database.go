@@ -489,7 +489,7 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 		&gameData.AppDetails.PlaytimeLinuxForever,
 		&gameData.AppDetails.RtimeLastPlayed,
 		&gameData.AppDetails.Playtime2Weeks,
-		&gameData.Achievements.LastUpdated,
+		&gameData.AchivementDetails.LastUpdated,
 	)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -557,7 +557,7 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 			achievement.Unlocktime = time.Unix(unlockTimeInt, 0).Format(time.RFC1123)
 		}
 
-		gameData.Achievements.Achievements = append(gameData.Achievements.Achievements, achievement)
+		gameData.AchivementDetails.Achievements = append(gameData.AchivementDetails.Achievements, achievement)
 	}
 
 	return gameData, nil

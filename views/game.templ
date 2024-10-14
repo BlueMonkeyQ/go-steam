@@ -8,29 +8,22 @@ import (
 
 templ DetailPageBase(data model.GameData) {
     @layout.Base(){
-        
-        @AppDetails(data.AppDetails)   
 
-        // Causes Crash
-        <button 
-            hx-get={ "/updateAchivements/"+ data.AppDetails.AppID } 
-            hx-trigger="click"
-            hx-target="#achievements-table"
-            hx-swap="outerHTML">
-            Update Achievements
-        </button>            
+        <img src={ data.AppDetails.HeaderImage }>
+        <h1>{ data.AppDetails.Name }</h1>
 
-        <div>
-            <h2>Achievements</h2>
-            @AchievementTable(data.Achievements)
+        <div class="tab-list" role="tablist">
+            <button hx-get="/tab1" role="tab" aria-selected="true" aria-controls="tab-content">App Details</button>
+            <button hx-get="/tab2" role="tab" aria-selected="false" aria-controls="tab-content">Achievements</button>
         </div>
+        
+        @AppDetails(data.AppDetails)
+        @AchievementsTab(data.AchivementDetails)
     }
 }
 
 templ AppDetails(data model.AppDetails) {
     <div class="app-details">
-        <img src={ data.HeaderImage }>
-        <h1>{ data.Name }</h1>
         <h2>Released { data.ReleaseDate }</h2>
 
         <p>Playtime { util.IntToString(data.PlaytimeForever) }hrs</p>
@@ -74,6 +67,37 @@ templ AppDetails(data model.AppDetails) {
     </div>
 }
 
+templ AchievementsTab(data model.AchivementDetails) {
+
+    <button 
+        hx-get={ "/updateAchivements/"+ data.AppID } 
+        hx-trigger="click"
+        hx-target="#achievements-table"
+        hx-swap="innerHTML">
+        Update Achievements
+    </button>
+
+    <h2>Achievements</h2>
+    @AchievementTable(data.Achievements)
+}
+
+templ AchievementTable(data []model.Achievement) {
+    <div id="achievements-table">
+        <table>
+            <tr>
+                <th>Icon</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Global</th>
+                <th>Unlocked On</th>
+            </tr>
+            for _, achievement := range data {
+                @AchievementRow(achievement)
+            }
+        </table>
+    </div>
+}
+
 templ AchievementRow(data model.Achievement) {
     <tr id={ "achievement-row-" + data.Name }>
         if data.Achieved {
@@ -90,23 +114,4 @@ templ AchievementRow(data model.Achievement) {
             <td>{ data.Unlocktime }</td>
         }
     </tr>
-}
-
-
-templ AchievementTable(data model.AchivementDetails) {
-    <div id="achievements-table">
-        <p>Last Updated: { data.LastUpdated }</p>
-        <table>
-            <tr>
-                <th>Icon</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Global</th>
-                <th>Unlocked On</th>
-            </tr>
-            for _, achievement := range data.Achievements {
-                @AchievementRow(achievement)
-            }
-        </table>
-    </div>
 }

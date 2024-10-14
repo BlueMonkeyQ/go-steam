@@ -60,11 +60,12 @@ type AppDetails struct {
 type AchivementDetails struct {
 	Achievements []Achievement
 	LastUpdated  string
+	AppID        string
 }
 
 type GameData struct {
-	AppDetails   AppDetails
-	Achievements AchivementDetails
+	AppDetails        AppDetails
+	AchivementDetails AchivementDetails
 }
 
 type Player struct {
