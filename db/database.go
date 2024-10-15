@@ -326,7 +326,7 @@ func GetFilterOption() (model.FilterOptions, error) {
 		}
 
 		for _, value := range genres {
-			if _, ok := genresDict[value]; !ok {
+			if _, ok := genresDict[value]; !ok && value != "" {
 				genresDict[value] = struct{}{}
 				genresList = append(genresList, value)
 			}
@@ -355,7 +355,7 @@ func GetFilterOption() (model.FilterOptions, error) {
 	return fo, nil
 }
 
-func GetLibraryDB(filter string) (model.Library, error) {
+func GetLibraryDB(title string, genre string) (model.Library, error) {
 	fmt.Println("Database: GetLibraryDB")
 	db, err := CreateConnection()
 	if err != nil {
@@ -364,38 +364,60 @@ func GetLibraryDB(filter string) (model.Library, error) {
 	defer db.Close()
 
 	var query string
-	if filter == "" {
+	var rows *sql.Rows
+
+	if title != "" {
 		query = `
-		SELECT 
-		sad.Appid, 
-		sad.Name,
-		IFNULL(sad.HeaderImage, '') AS HeaderImage,
-		sug.RtimeLastPlayed,
-		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
-		(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
-		FROM steamappdetails AS sad
-		JOIN steamusergames AS sug ON sug.Appid = sad.Appid
-		WHERE sad.Appid IS NOT NULL 
-		AND sad.Appid != 0 
-	`
+			SELECT
+			sad.Appid,
+			sad.Name,
+			IFNULL(sad.HeaderImage, '') AS HeaderImage,
+			sug.RtimeLastPlayed,
+			(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
+			(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
+			FROM steamappdetails AS sad
+			JOIN steamusergames AS sug ON sug.Appid = sad.Appid
+			WHERE sad.Appid IS NOT NULL
+			AND sad.Appid != 0
+			AND sad.Name LIKE '%' || ? || '%'
+			ORDER BY sug.PlaytimeForever DESC
+		`
+		rows, err = db.Query(query, title)
+	} else if genre != "" {
+		query = `
+			SELECT
+			sad.Appid,
+			sad.Name,
+			IFNULL(sad.HeaderImage, '') AS HeaderImage,
+			sug.RtimeLastPlayed,
+			(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
+			(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
+			FROM steamappdetails AS sad
+			JOIN steamusergames AS sug ON sug.Appid = sad.Appid
+			WHERE sad.Appid IS NOT NULL
+			AND sad.Appid != 0
+			AND sad.Genres LIKE '%' || ? || '%'
+			ORDER BY sug.PlaytimeForever DESC
+		`
+		rows, err = db.Query(query, genre)
 	} else {
 		query = `
-		SELECT 
-		sad.Appid, 
-		sad.Name, 
-		IFNULL(sad.HeaderImage, '') AS HeaderImage,
-		sug.RtimeLastPlayed,
-		(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
-		(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
-		FROM steamappdetails AS sad
-		JOIN steamusergames AS sug ON sug.Appid = sad.Appid
-		WHERE sad.Appid IS NOT NULL 
-		AND sad.Appid != 0
-		AND sad.Name LIKE '%' || ? || '%'
-	`
-
+			SELECT
+			sad.Appid,
+			sad.Name,
+			IFNULL(sad.HeaderImage, '') AS HeaderImage,
+			sug.RtimeLastPlayed,
+			(SELECT COUNT(*) FROM steamachievements WHERE Appid = sad.Appid) AS TotalAchivements,
+			(SELECT COUNT(*) FROM steamuserachievements WHERE Appid = sad.Appid AND Achieved = 1) AS TotalAchieved
+			FROM steamappdetails AS sad
+			JOIN steamusergames AS sug ON sug.Appid = sad.Appid
+			WHERE sad.Appid IS NOT NULL
+			AND sad.Appid != 0
+			ORDER BY sug.PlaytimeForever DESC
+		`
+		rows, err = db.Query(query)
 	}
-	rows, err := db.Query(query, filter)
+
 	if err != nil {
 		return model.Library{}, err
 	}
@@ -432,7 +454,7 @@ func GetGameDetailsDB(id int) (model.GameData, error) {
 	defer db.Close()
 
 	var query = `
-		SELECT 
+		SELECT
 			sad.Appid,
 			sad.SteamAppid,
 			sad.Name,
@@ -572,7 +594,7 @@ func GetFriendsDB(steamid string) ([]model.Player, error) {
 	defer db.Close()
 
 	var query = `
-		SELECT 
+		SELECT
 			sf.Steamid,
 			sf.FriendSince,
 			su.Communityvisibilitystate,
@@ -850,7 +872,7 @@ func UpdateSteamUserGamesLastUpdated(id int, lastUpdated string) error {
 	defer db.Close()
 
 	var query string = `
-		UPDATE steamusergames 
+		UPDATE steamusergames
 		SET
 		LastUpdated = ?
 		WHERE Appid = ?
@@ -985,4 +1007,103 @@ func InsertSteamUsersDB(data []model.PlayerAPI) error {
 		return err
 	}
 	return nil
+}
+
+func GetSteamUserAchievements(id int, filter string) ([]model.Achievement, error) {
+	fmt.Println("Database: GetSteamUserAchievements")
+
+	db, err := CreateConnection()
+	if err != nil {
+		return []model.Achievement{}, err
+	}
+	defer db.Close()
+	var query string
+	if filter == "All" {
+		query = `
+		SELECT
+			sa.Name,
+			sa.DisplayName,
+			sa.Hidden,
+			sa.Description,
+			sa.Icon,
+			sa.IconGray,
+			sua.Achieved,
+			sua.Unlocktime,
+			sua.Percentage
+		FROM steamachievements as sa
+		JOIN steamuserachievements as sua ON sua.Apiname = sa.Name
+		WHERE sa.Appid = ?
+		`
+	} else if filter == "Locked" {
+		query = `
+		SELECT
+			sa.Name,
+			sa.DisplayName,
+			sa.Hidden,
+			sa.Description,
+			sa.Icon,
+			sa.IconGray,
+			sua.Achieved,
+			sua.Unlocktime,
+			sua.Percentage
+		FROM steamachievements as sa
+		JOIN steamuserachievements as sua ON sua.Apiname = sa.Name
+		WHERE sa.Appid = ?
+		AND sua.Achieved == 0
+		`
+	} else if filter == "Unlocked" {
+		query = `
+		SELECT
+			sa.Name,
+			sa.DisplayName,
+			sa.Hidden,
+			sa.Description,
+			sa.Icon,
+			sa.IconGray,
+			sua.Achieved,
+			sua.Unlocktime,
+			sua.Percentage
+		FROM steamachievements as sa
+		JOIN steamuserachievements as sua ON sua.Apiname = sa.Name
+		WHERE sa.Appid = ?
+		AND sua.Achieved == 1
+		`
+	}
+
+	rows, err := db.Query(query, id)
+	if err != nil {
+		return []model.Achievement{}, err
+	}
+	defer rows.Close()
+
+	var achievements []model.Achievement
+	for rows.Next() {
+		var achievement model.Achievement
+		err = rows.Scan(
+			&achievement.Name,
+			&achievement.DisplayName,
+			&achievement.Hidden,
+			&achievement.Description,
+			&achievement.Icon,
+			&achievement.IconGray,
+			&achievement.Achieved,
+			&achievement.Unlocktime,
+			&achievement.Percentage,
+		)
+		if err != nil {
+			return []model.Achievement{}, err
+		}
+
+		unlockTimeInt, err := strconv.ParseInt(achievement.Unlocktime, 10, 64)
+		if err != nil {
+			unlockTimeInt = 0
+		}
+
+		if unlockTimeInt != 0 {
+			achievement.Unlocktime = time.Unix(unlockTimeInt, 0).Format(time.RFC1123)
+		}
+
+		achievements = append(achievements, achievement)
+	}
+	return achievements, nil
 }

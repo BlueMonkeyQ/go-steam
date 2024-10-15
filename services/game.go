@@ -23,6 +23,15 @@ func GetDetailsPage(id int) (model.GameData, error) {
 	return data, nil
 }
 
+func GetAchievements(id int, filter string) ([]model.Achievement, error) {
+	fmt.Println("Endpoint: GetAchievements")
+	data, err := db.GetSteamUserAchievements(id, filter)
+	if err != nil {
+		return []model.Achievement{}, err
+	}
+	return data, nil
+}
+
 func UpdateAchievements(id int) error {
 	fmt.Println("Endpoint: UpdateAchievements")
 	if err := ValidateSettings(); err != nil {

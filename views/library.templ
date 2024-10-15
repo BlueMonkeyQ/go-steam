@@ -1,75 +1,80 @@
 package views
 
 import (
-    "go-steam/views/layout"
-    "go-steam/model"
-    )
+	"go-steam/model"
+	"go-steam/views/layout"
+)
 
 templ LibraryPage(library model.Library) {
-    @layout.Base(){    
-        <h1>Steam User Library</h1>
-        <button 
-        hx-get="/updateLibrary"
-        hx-target="#library-cards"
-        hx-swap="outerHTML"
-        >
-        Update Library
-        </button>
-
-        <input 
-        type="search"
-        name="filter"
-        placeholder="Search Game Title"
-        hx-trigger="input changed delay:500ms, search"
-        hx-get="/getLibraryFilter" 
-        hx-vals="{'filter': this.value}"
-        hx-target="#library-cards"
-        hx-swap="outerHTML"
-        >
-        @FilterOptions(library.FilterOptions)
-        @LibraryCards(library)
-    }
+	@layout.Base() {
+		<h1>Steam User Library</h1>
+		<button
+			hx-get="/updateLibrary"
+			hx-target="#library-cards"
+			hx-swap="outerHTML"
+		>
+			Update Library
+		</button>
+		<input
+			type="search"
+			name="filter"
+			placeholder="Search Game Title"
+			hx-trigger="input changed delay:500ms, search"
+			hx-get="/getLibraryFilter/title"
+			hx-vals="{'filter': this.value}"
+			hx-target="#library-cards"
+			hx-swap="outerHTML"
+		/>
+		@FilterOptions(library.FilterOptions)
+		@LibraryCards(library)
+	}
 }
 
 templ LibraryCard(card model.LibraryCard) {
-    <div id={ "library-card-" + card.AppID }>
-        <a href={ templ.URL("/getSteamUserLibrary/" + card.AppID)}>
-            <div>
-                <img src={ card.HeaderImage } alt="Whoops">
-                <li>{ card.Name }</li>
-                <li>Last Played: { card.RtimeLastPlayed }</li>
-                <li>{ card.TotalAchieved } / { card.TotalAchivements }</li>
-            </div>
-        </a>
-    </div>
+	<div id={ "library-card-" + card.AppID }>
+		<a href={ templ.URL("/getSteamUserLibrary/" + card.AppID) }>
+			<div>
+				<img src={ card.HeaderImage } alt="Whoops"/>
+				<li>{ card.Name }</li>
+				<li>Last Played: { card.RtimeLastPlayed }</li>
+				<li>{ card.TotalAchieved } / { card.TotalAchivements }</li>
+			</div>
+		</a>
+	</div>
 }
 
 templ LibraryCards(library model.Library) {
-    <div id="library-cards">
-        for _, card := range library.Cards {
-        @LibraryCard(card)
-        }
-    </div>
+	<div id="library-cards">
+		for _, card := range library.Cards {
+			@LibraryCard(card)
+		}
+	</div>
 }
 
 templ FilterOptions(filter model.FilterOptions) {
-    <div>
-        <button
-            hx-trigger="click"
-            hx-target="#genres-list"
-            hx-swap="outerHTML"
-        >
-            Filter by Genre
-        </button>
-
-        <form hx-boost="true" action="/getLibraryFilterGenres" method="GET">
-            for _, genre := range filter.Genres {
-                <div>
-                    <input type="checkbox" name="genre" value={ genre }>
-                    <label>{ genre }</label>
-                </div>
-            }
-            <button type="submit">Update Filter</button>
-        </form>
-    </div>
+	//<div>
+	//	<form hx-boost="true" hx-post="/getLibraryFilter/genre" hx-target="#library-cards" hx-swap="innerHTML">
+	//		for _, genre := range filter.Genres {
+	//			<div>
+	//				<input type="checkbox" name="genre" value={ genre }/>
+	//				<label>{ genre }</label>
+	//			</div>
+	//		}
+	//		<button type="submit">Update Filter</button>
+	//	</form>
+	//</div>
+	<div>
+		for _, genre := range filter.Genres {
+			<div>
+				<button
+					hx-post={ "/getLibraryFilter/" + genre }
+					hx-trigger="click"
+					hx-target="#library-cards"
+					hx-swap="innerHTML"
+				>
+					{ genre }
+				</button>
+			</div>
+		}
+	</div>
 }

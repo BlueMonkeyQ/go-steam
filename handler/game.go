@@ -30,6 +30,23 @@ func GetDetailsPage(c echo.Context) error {
 	return util.Render(c, views.DetailPageBase(data))
 }
 
+func GetAchievements(c echo.Context) error {
+	param := util.GetParam(c, "AppID")
+	id, err := util.StringToInt(param)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	param = util.GetParam(c, "Filter")
+	data, err := services.GetAchievements(id, param)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	return util.Render(c, views.AchievementTable(data))
+}
+
 func UpdateAchievements(c echo.Context) error {
 	param := util.GetParam(c, "AppID")
 	id, err := util.StringToInt(param)

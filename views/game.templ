@@ -1,117 +1,129 @@
 package views
 
 import (
-    "go-steam/views/layout"
-    "go-steam/model"
-    "go-steam/util"
-    )
+	"go-steam/model"
+	"go-steam/util"
+	"go-steam/views/layout"
+)
 
 templ DetailPageBase(data model.GameData) {
-    @layout.Base(){
-
-        <img src={ data.AppDetails.HeaderImage }>
-        <h1>{ data.AppDetails.Name }</h1>
-
-        <div class="tab-list" role="tablist">
-            <button hx-get="/tab1" role="tab" aria-selected="true" aria-controls="tab-content">App Details</button>
-            <button hx-get="/tab2" role="tab" aria-selected="false" aria-controls="tab-content">Achievements</button>
-        </div>
-        
-        @AppDetails(data.AppDetails)
-        @AchievementsTab(data.AchivementDetails)
-    }
+	@layout.Base() {
+		<img src={ data.AppDetails.HeaderImage }/>
+		<h1>{ data.AppDetails.Name }</h1>
+		<div class="tab-list" role="tablist">
+			<button hx-get="/tab1" role="tab" aria-selected="true" aria-controls="tab-content">App Details</button>
+			<button hx-get="/tab2" role="tab" aria-selected="false" aria-controls="tab-content">Achievements</button>
+		</div>
+		@AppDetails(data.AppDetails)
+		@AchievementsTab(data.AchivementDetails)
+	}
 }
 
 templ AppDetails(data model.AppDetails) {
-    <div class="app-details">
-        <h2>Released { data.ReleaseDate }</h2>
-
-        <p>Playtime { util.IntToString(data.PlaytimeForever) }hrs</p>
-        <p>Last Time Played { data.RtimeLastPlayed }</p>
-        <p>Past 2 Weeks Played { util.IntToString(data.Playtime2Weeks) }hrs</p>
-
-        <a href={ templ.URL("https://store.steampowered.com/app/" + data.AppID) }>Steam Page</a>
-        <p>{ data.ShortDescripton }</p>
-
-        <h3>Developers</h3>
-        for _, i := range data.Developers{
-            <p>{ i }</p>
-        }
-
-        <h3>Publishers</h3>
-        for _, i := range data.Publishers{
-            <p>{ i }</p>
-        }
-
-        <h3>Categories</h3>
-        for _, i := range data.Categories{
-            <p>{ i }</p>
-        }
-
-        <h3>Genres</h3>
-        for _, i := range data.Genres{
-            <p>{ i }</p>
-        }
-
-        <h3>Platforms</h3>
-        if data.Windows == true {
-            <p>Windows</p>
-        }
-        if data.Linux == true {
-            <p>Linux</p>
-        }
-        if data.Mac == true {
-            <p>Mac</p>
-        }
-
-    </div>
+	<div class="app-details">
+		<h2>Released { data.ReleaseDate }</h2>
+		<p>Playtime { util.IntToString(data.PlaytimeForever) }hrs</p>
+		<p>Last Time Played { data.RtimeLastPlayed }</p>
+		<p>Past 2 Weeks Played { util.IntToString(data.Playtime2Weeks) }hrs</p>
+		<a href={ templ.URL("https://store.steampowered.com/app/" + data.AppID) }>Steam Page</a>
+		<p>{ data.ShortDescripton }</p>
+		<h3>Developers</h3>
+		for _, i := range data.Developers {
+			<p>{ i }</p>
+		}
+		<h3>Publishers</h3>
+		for _, i := range data.Publishers {
+			<p>{ i }</p>
+		}
+		<h3>Categories</h3>
+		for _, i := range data.Categories {
+			<p>{ i }</p>
+		}
+		<h3>Genres</h3>
+		for _, i := range data.Genres {
+			<p>{ i }</p>
+		}
+		<h3>Platforms</h3>
+		if data.Windows == true {
+			<p>Windows</p>
+		}
+		if data.Linux == true {
+			<p>Linux</p>
+		}
+		if data.Mac == true {
+			<p>Mac</p>
+		}
+	</div>
 }
 
 templ AchievementsTab(data model.AchivementDetails) {
-
-    <button 
-        hx-get={ "/updateAchivements/"+ data.AppID } 
-        hx-trigger="click"
-        hx-target="#achievements-table"
-        hx-swap="innerHTML">
-        Update Achievements
-    </button>
-
-    <h2>Achievements</h2>
-    @AchievementTable(data.Achievements)
+	<button
+		hx-get={ "/updateAchivements/" + data.AppID }
+		hx-trigger="click"
+		hx-target="#achievements-table"
+		hx-swap="innerHTML"
+	>
+		Update Achievements
+	</button>
+	<button
+		hx-get={ "/filterAchivements/" + data.AppID + "/All" }
+		hx-trigger="click"
+		hx-target="#achievements-table"
+		hx-swap="innerHTML"
+	>
+		All
+	</button>
+	<button
+		hx-get={ "/filterAchivements/" + data.AppID + "/Locked" }
+		hx-trigger="click"
+		hx-target="#achievements-table"
+		hx-swap="innerHTML"
+	>
+		Locked
+	</button>
+	<button
+		hx-get={ "/filterAchivements/" + data.AppID + "/Unlocked" }
+		hx-trigger="click"
+		hx-target="#achievements-table"
+		hx-swap="innerHTML"
+	>
+		Unlocked
+	</button>
+	@AchievementTable(data.Achievements)
 }
 
 templ AchievementTable(data []model.Achievement) {
-    <div id="achievements-table">
-        <table>
-            <tr>
-                <th>Icon</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Global</th>
-                <th>Unlocked On</th>
-            </tr>
-            for _, achievement := range data {
-                @AchievementRow(achievement)
-            }
-        </table>
-    </div>
+	<div id="achievements-table">
+		<h2>Achievements: { util.IntToString(len(data)) }</h2>
+		<table>
+			<tr>
+				<th>Icon</th>
+				<th>Name</th>
+				<th>Description</th>
+				<th>Global</th>
+				<th>Unlocked On</th>
+			</tr>
+			for _, achievement := range data {
+				@AchievementRow(achievement)
+			}
+		</table>
+	</div>
 }
 
 templ AchievementRow(data model.Achievement) {
-    <tr id={ "achievement-row-" + data.Name }>
-        if data.Achieved {
-            <td><img src={ data.Icon } alt="Whoops"></td>
-        } else {
-            <td><img src={ data.IconGray } alt="Whoops"></td>
-        }
-        <td>{ data.DisplayName }</td>
-        <td>{ data.Description }</td>
-        <td>{ data.Percentage }</td>
-        if data.Unlocktime == "0" {
-            <td></td>
-        } else {
-            <td>{ data.Unlocktime }</td>
-        }
-    </tr>
+	<tr id={ "achievement-row-" + data.Name }>
+		if data.Achieved {
+			<td><img src={ data.Icon } alt="Whoops"/></td>
+		} else {
+			<td><img src={ data.IconGray } alt="Whoops"/></td>
+		}
+		<td>{ data.DisplayName }</td>
+		<td>{ data.Description }</td>
+		<td>{ data.Percentage }</td>
+		if data.Unlocktime == "0" {
+			<td></td>
+		} else {
+			<td>{ data.Unlocktime }</td>
+		}
+	</tr>
 }

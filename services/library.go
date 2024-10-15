@@ -13,15 +13,14 @@ import (
 	"time"
 )
 
-func GetLibrary(filter string) (model.Library, error) {
-	fmt.Println("Endpoint: GetLibrary")
+func GetLibrary(title string, genre string) (model.Library, error) {
+	fmt.Println("Endpoint: GetLibrary", title, genre)
+
 	if err := ValidateSettings(); err != nil {
 		return model.Library{}, err
 	}
 
-	db.GetFilterOption()
-
-	data, err := db.GetLibraryDB(filter)
+	data, err := db.GetLibraryDB(title, genre)
 	if err != nil {
 		return model.Library{}, err
 	}
@@ -30,7 +29,6 @@ func GetLibrary(filter string) (model.Library, error) {
 
 func GetFilterOptions() (model.FilterOptions, error) {
 	fmt.Println("Endpoint: GetFilterOptions")
-
 	data, err := db.GetFilterOption()
 	if err != nil {
 		return model.FilterOptions{}, err
